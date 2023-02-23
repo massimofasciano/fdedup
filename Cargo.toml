@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 sha2 = "0.10.6"
 walkdir = "2"
+hex = "0.4"
 
 [profile.release]
 codegen-units = 1
