@@ -16,16 +16,8 @@ impl HashedFile {
 
         let mut hasher = Sha512::new();
         let mut file = fs::File::open(&path)?;
-        
         io::copy(&mut file, &mut hasher)?;
-        let hash_bytes = hasher.finalize();
-
-        let hash = hash_bytes.to_vec();
-        let hf = HashedFile { 
-            path, 
-            hash,
-        };
-        Ok(hf)
+        Ok(HashedFile{path, hash : hasher.finalize().to_vec()})
     }
 }
 
