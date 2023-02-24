@@ -65,21 +65,6 @@ impl HashedFile {
         let size = io::copy(&mut file, &mut hasher)?;
         Ok(HashedFile{path, hash : hasher.finalize().to_vec(), modified, size})
     }
-    pub fn size(&self) -> FileSize {
-        self.size
-    }
-    pub fn modified(&self) -> &SystemTime {
-        &self.modified
-    }
-    pub fn path(&self) -> &PathData {
-        &self.path
-    }
-    pub fn hash(&self) -> &HashData {
-        &self.hash
-    }
-    pub fn hex_hash(&self) -> String {
-        hex::encode(&self.hash)
-    }
 }
 
 impl Clone for HashedFile {
@@ -144,11 +129,11 @@ impl HashedFiles {
             let group : Vec<_> = group.collect();
             if group.len() > 1 {
                 let group_info = group[0];
-                if group_info.size() > minsize {
+                if group_info.size > minsize {
                     result.push(Duplicates {
-                        size : group_info.size(),
-                        hex_hash : group_info.hex_hash(),
-                        paths : group.iter().map(|e| e.path().clone()).collect::<Vec<_>>(),
+                        size : group_info.size,
+                        hex_hash : hex::encode(&group_info.hash),
+                        paths : group.iter().map(|e| e.path.clone()).collect::<Vec<_>>(),
                     })
                 }
             }
