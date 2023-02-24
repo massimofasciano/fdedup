@@ -95,21 +95,21 @@ impl HashedFiles {
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
+        vprintln!("add_path {:?}, {:?}", path, modified);
         if let Some(old) = self.by_path.get(&path) {
             // file is already cached
-            if old.modified == modified {
+            // check last modified date and reuse if same
+                if old.modified == modified {
                 vprintln!("reusing {}",old.path.display());
-                // check last modified date and reuse if same
                 self.add_file_by_hash(&old.clone());
-
-            } else {
-                // hash new entry and add it
-                if let Ok(hf) = HashedFile::new(path,modified) {
-                    vprintln!("hashing {}",hf.path.display());
-                    self.add_file_by_hash(&hf);
-                    self.by_path.insert(hf.path.clone(), hf);
-                }
+                return;
             }
+        }
+        // hash new entry and add it
+        if let Ok(hf) = HashedFile::new(path,modified) {
+            vprintln!("hashing {}",hf.path.display());
+            self.add_file_by_hash(&hf);
+            self.by_path.insert(hf.path.clone(), hf);
         }
     }
     fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
@@ -166,6 +166,7 @@ pub fn index_dir(hfs : &mut HashedFiles, dir : &str) -> Result<(), Box<dyn std::
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file());
     for entry in walk {
+        vprintln!("{:#?}",entry);
         hfs.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
     }
     Ok(())
