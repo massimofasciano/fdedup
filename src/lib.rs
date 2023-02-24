@@ -87,9 +87,6 @@ impl HashedFiles {
             by_path : HashMap::new(),
         }
     }
-    pub fn get_by_path (&self, path : &PathData) -> Option<&HashedFile> {
-        self.by_path.get(path)
-    }
     fn add_file_by_hash(&mut self, f: &HashedFile) {
         if let Some(v) = self.by_hash.get_mut(&f.hash) {
             v.push(f.path.clone())
@@ -115,7 +112,7 @@ impl HashedFiles {
             }
         }
     }
-    pub fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
+    fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
         self.by_hash.iter().filter_map(|(_,x)| {
             if (*x).len() > 1 {
                 Some((*x).iter().map(|p| self.by_path.get(p).unwrap()))
