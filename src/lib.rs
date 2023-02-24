@@ -1,6 +1,12 @@
 use std::{collections::HashMap, time::SystemTime};
 use serde::{Serialize,Deserialize};
 
+//const VERBOSE: bool = true;
+const VERBOSE: bool = false;
+macro_rules! vprintln {
+    ($($x:tt)*) => { if VERBOSE { println!($($x)*); } }
+}
+
 type HashData = Vec<u8>;
 type PathData = std::path::PathBuf;
 type FileSize = u64;
@@ -27,6 +33,16 @@ impl Duplicates {
     }
     pub fn hex_hash(&self) -> &String {
         &self.hex_hash
+    }
+}
+
+impl std::fmt::Display for Duplicates {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        writeln!(f, "# {} {}",self.size(), self.hex_hash())?;
+        for p in self.display_paths() {
+            writeln!(f, "{}",p)?
+        }
+        writeln!(f)
     }
 }
 
@@ -66,6 +82,12 @@ impl HashedFile {
     }
 }
 
+impl Clone for HashedFile {
+    fn clone(&self) -> Self {
+        Self {path: self.path.clone(),hash : self.hash.clone(),modified : self.modified,size : self.size}
+    }
+}
+
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct HashedFiles {
@@ -83,31 +105,29 @@ impl HashedFiles {
     pub fn get_by_path (&self, path : &PathData) -> Option<&HashedFile> {
         self.by_path.get(path)
     }
-    fn add_file(&mut self, f: HashedFile) {
+    fn add_file_by_hash(&mut self, f: &HashedFile) {
         if let Some(v) = self.by_hash.get_mut(&f.hash) {
             v.push(f.path.clone())
         } else {
             self.by_hash.insert(f.hash.clone(), vec!(f.path.clone()));
         };
-        self.by_path.insert(f.path.clone(), f);
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
-        if let Some(old) = self.get_by_path(&path) {
-            // file is already indexed
+        if let Some(old) = self.by_path.get(&path) {
+            // file is already cached
             if old.modified == modified {
-                // check last modified date
-                return;
+                vprintln!("reusing {}",old.path.display());
+                // check last modified date and reuse if same
+                self.add_file_by_hash(&old.clone());
+
             } else {
-                // invalidate existing data
-                if let Some(old_dups) = self.by_hash.get(&old.hash) {
-                    let mut new_dups = old_dups.clone();
-                    new_dups.remove(new_dups.iter().position(|x| *x == path).unwrap());
-                    self.by_hash.insert(old.hash.clone(), new_dups);
+                // hash new entry and add it
+                if let Ok(hf) = HashedFile::new(path,modified) {
+                    vprintln!("hashing {}",hf.path.display());
+                    self.add_file_by_hash(&hf);
+                    self.by_path.insert(hf.path.clone(), hf);
                 }
             }
-        }
-        if let Ok(hf) = HashedFile::new(path,modified) {
-            self.add_file(hf)
         }
     }
     pub fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
@@ -139,6 +159,24 @@ impl HashedFiles {
     pub fn duplicates(& self) -> Vec<Duplicates> {
         self.duplicates_with_minsize(0)
     }
+    pub fn write_cache(& self, fname : &str) -> Result<(), Box<dyn std::error::Error>> {
+        let bytes = bincode::serialize(&self.by_path)?;
+        std::fs::write(fname, &bytes[..])?;
+        Ok(())
+    }
+    pub fn read_cache(&mut self, fname : &str) -> Result<(), Box<dyn std::error::Error>> {
+        let bytes = std::fs::read(fname)?;
+        let cache : HashMap<PathData,HashedFile> = bincode::deserialize(&bytes[..])?;
+        for (p,f) in cache.iter() {
+            if !self.by_path.contains_key(p) {
+                vprintln!("adding to cache: {}",p.display());
+                self.by_path.insert(f.path.clone(), f.clone());
+            } else {
+                vprintln!("aready cached: {}",p.display());
+            }
+        }
+        Ok(())
+    }
 }
 
 pub fn index_dir(hfs : &mut HashedFiles, dir : &str) {
@@ -150,12 +188,3 @@ pub fn index_dir(hfs : &mut HashedFiles, dir : &str) {
     }
 }
 
-pub fn serialize(fname : &str, hfs : HashedFiles) {
-    let bytes = bincode::serialize(&hfs).unwrap();
-    std::fs::write(fname, &bytes[..]).unwrap();
-}
-
-pub fn deserialize(fname : &str) -> HashedFiles {
-    let bytes = std::fs::read(fname).unwrap_or(vec!());
-    bincode::deserialize(&bytes[..]).unwrap_or(HashedFiles::new())
-}

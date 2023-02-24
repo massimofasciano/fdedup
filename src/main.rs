@@ -1,16 +1,13 @@
-use fdedup::{HashedFiles, deserialize, serialize, index_dir};
+use fdedup::{HashedFiles, index_dir};
 
-fn main() {
-    let fname = "hfs.bin";
-    //let mut hfs = HashedFiles::new();
-    let mut hfs : HashedFiles = deserialize(fname);
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let fname = "cache.bin";
+    let mut hfs = HashedFiles::new();
+    hfs.read_cache(fname)?;
     index_dir(&mut hfs, ".");
     for dup in hfs.duplicates() {
-        println!("# {} {}",dup.size(), dup.hex_hash());
-        for p in dup.display_paths() {
-            println!("{}",p)
-        }
-        println!();
+        println!("{}",dup);
     }
-    serialize(fname, hfs);
+    hfs.write_cache(fname)?;
+    Ok(())
 }
