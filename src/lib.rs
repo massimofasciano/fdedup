@@ -1,4 +1,5 @@
 use std::{collections::HashMap, time::SystemTime};
+use serde::{Serialize,Deserialize};
 
 type HashData = Vec<u8>;
 type PathData = std::path::PathBuf;
@@ -30,6 +31,7 @@ impl Duplicates {
 }
 
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct HashedFile {
     path : PathData,
     hash : HashData,
@@ -65,6 +67,7 @@ impl HashedFile {
 }
 
 #[derive(Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct HashedFiles {
     by_hash : HashMap<HashData,Vec<PathData>>,
     by_path : HashMap<PathData,HashedFile>,

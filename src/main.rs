@@ -10,8 +10,20 @@ fn index_dir(hfs : &mut HashedFiles, dir : &str) {
     }
 }
 
+fn serialize(fname : &str, hfs : HashedFiles) {
+    let bytes = bincode::serialize(&hfs).unwrap();
+    std::fs::write(fname, &bytes[..]).unwrap();
+}
+
+fn deserialize(fname : &str) -> HashedFiles {
+    let bytes = std::fs::read(fname).unwrap_or(vec!());
+    bincode::deserialize(&bytes[..]).unwrap_or(HashedFiles::new())
+}
+
 fn main() {
-    let mut hfs = HashedFiles::new();
+    let fname = "hfs.bin";
+    //let mut hfs = HashedFiles::new();
+    let mut hfs = deserialize(fname);
     index_dir(&mut hfs, ".");
     for dup in hfs.duplicates() {
         println!("# {} {}",dup.size(), dup.hex_hash());
@@ -20,4 +32,5 @@ fn main() {
         }
         println!();
     }
+    serialize(fname, hfs);
 }
