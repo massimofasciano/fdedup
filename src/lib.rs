@@ -7,6 +7,8 @@ macro_rules! vprintln {
     ($($x:tt)*) => { if VERBOSE { println!($($x)*); } }
 }
 
+pub type GenericResult<T> = Result<T, Box<dyn std::error::Error>>;
+
 type HashData = Vec<u8>;
 type PathData = std::path::PathBuf;
 type FileSize = u64;
@@ -56,7 +58,7 @@ pub struct HashedFile {
 }
 
 impl HashedFile {
-    pub fn new(path : PathData, modified : SystemTime) -> Result<HashedFile, Box<dyn std::error::Error>> {
+    pub fn new(path : PathData, modified : SystemTime) -> GenericResult<HashedFile> {
         use sha2::{Sha512, Digest};
         use std::{io, fs};
 
@@ -141,12 +143,12 @@ impl HashedFiles {
     pub fn duplicates(& self) -> Vec<Duplicates> {
         self.duplicates_with_minsize(0)
     }
-    pub fn write_cache(& self, fname : &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn write_cache(& self, fname : &str) -> GenericResult<()> {
         let bytes = bincode::serialize(&self.by_path)?;
         std::fs::write(fname, &bytes[..])?;
         Ok(())
     }
-    pub fn read_cache(&mut self, fname : &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn read_cache(&mut self, fname : &str) -> GenericResult<()> {
         let bytes = std::fs::read(fname)?;
         let cache : HashMap<PathData,HashedFile> = bincode::deserialize(&bytes[..])?;
         for (p,f) in cache.iter() {
@@ -161,7 +163,7 @@ impl HashedFiles {
     }
 }
 
-pub fn index_dir(hfs : &mut HashedFiles, dir : &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn index_dir(hfs : &mut HashedFiles, dir : &str) -> GenericResult<()> {
     let walk = walkdir::WalkDir::new(dir).into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file());
@@ -170,5 +172,40 @@ pub fn index_dir(hfs : &mut HashedFiles, dir : &str) -> Result<(), Box<dyn std::
         hfs.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
     }
     Ok(())
+}
+
+pub struct Deduplicator {
+    dirs : Vec<String>,
+    hashed_files : HashedFiles
+}
+
+impl Deduplicator {
+    pub fn new(dir : &str) -> Self {
+        Self {
+            dirs : vec!(dir.to_owned()),
+            hashed_files : HashedFiles::new()
+        }
+    }
+    pub fn add_dir(&mut self, dir: &str) {
+        self.dirs.push(dir.to_owned());
+    }
+    pub fn read_cache(&mut self, fname: &str) {
+        match self.hashed_files.read_cache(fname) {
+            Ok(_) => { }
+            _ => { println!("Warning: could not load cache file {}",fname); }
+        }
+    }
+    pub fn write_cache(&mut self, fname: &str) -> GenericResult<()>{
+        self.hashed_files.write_cache(fname)
+    }
+    pub fn run(&mut self) -> GenericResult<()> {
+        for dir in &self.dirs {
+            index_dir(&mut self.hashed_files, dir)?;
+        }
+        for dup in self.hashed_files.duplicates() {
+            println!("{}",dup);
+        }
+        Ok(())
+    }
 }
 

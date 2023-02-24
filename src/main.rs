@@ -1,13 +1,10 @@
-use fdedup::{HashedFiles, index_dir};
+use fdedup::{Deduplicator, GenericResult};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let fname = "cache.bin";
-    let mut hfs = HashedFiles::new();
-    _ = hfs.read_cache(fname);
-    index_dir(&mut hfs, ".")?;
-    for dup in hfs.duplicates() {
-        println!("{}",dup);
-    }
-    hfs.write_cache(fname)?;
+fn main() -> GenericResult<()> {
+    let cache = "cache.bin";
+    let mut dedup = Deduplicator::new(".");
+    dedup.read_cache(cache);
+    dedup.run()?;
+    dedup.write_cache(cache)?;
     Ok(())
 }
