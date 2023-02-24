@@ -1,2 +1,5 @@
 /target
 .fdedup_cache.bin
+.fdedup_cache_*.bin
+cache.bin
+.cache.bin
