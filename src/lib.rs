@@ -161,17 +161,16 @@ impl HashedFiles {
         }
         Ok(())
     }
-}
-
-pub fn index_dir(hfs : &mut HashedFiles, dir : &str) -> GenericResult<()> {
-    let walk = walkdir::WalkDir::new(dir).into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file());
-    for entry in walk {
-        vprintln!("{:#?}",entry);
-        hfs.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
+    pub fn index_dir(&mut self, dir : &str) -> GenericResult<()> {
+        let walk = walkdir::WalkDir::new(dir).into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().is_file());
+        for entry in walk {
+            vprintln!("{:#?}",entry);
+            self.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
+        }
+        Ok(())
     }
-    Ok(())
 }
 
 pub struct Deduplicator {
@@ -200,7 +199,7 @@ impl Deduplicator {
     }
     pub fn run(&mut self) -> GenericResult<()> {
         for dir in &self.dirs {
-            index_dir(&mut self.hashed_files, dir)?;
+            self.hashed_files.index_dir(dir)?;
         }
         for dup in self.hashed_files.duplicates() {
             println!("{}",dup);
