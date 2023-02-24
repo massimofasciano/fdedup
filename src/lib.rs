@@ -161,12 +161,13 @@ impl HashedFiles {
     }
 }
 
-pub fn index_dir(hfs : &mut HashedFiles, dir : &str) {
+pub fn index_dir(hfs : &mut HashedFiles, dir : &str) -> Result<(), Box<dyn std::error::Error>> {
     let walk = walkdir::WalkDir::new(dir).into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file());
     for entry in walk {
-        hfs.add_path(entry.path().to_owned(), entry.metadata().unwrap().modified().unwrap());
+        hfs.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
     }
+    Ok(())
 }
 
