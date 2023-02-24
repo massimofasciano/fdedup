@@ -115,7 +115,7 @@ impl HashedFiles {
     fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
         self.by_hash.iter().filter_map(|(_,x)| {
             if (*x).len() > 1 {
-                Some((*x).iter().map(|p| self.by_path.get(p).unwrap()))
+                Some((*x).iter().filter_map(|p| self.by_path.get(p)))
             } else {
                 None
             }})
