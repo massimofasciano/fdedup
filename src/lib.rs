@@ -1,8 +1,7 @@
-use std::{collections::HashMap};
+use std::{collections::HashMap, time::SystemTime};
 
 type HashData = Vec<u8>;
 type PathData = std::path::PathBuf;
-type MetaData = Option<std::fs::Metadata>;
 type FileSize = u64;
 
 #[derive(Debug)]
@@ -34,25 +33,25 @@ impl Duplicates {
 pub struct HashedFile {
     path : PathData,
     hash : HashData,
-    metadata : MetaData,
+    modified : SystemTime,
     size : FileSize,
 }
 
 impl HashedFile {
-    pub fn new(path : PathData, metadata: MetaData) -> Result<HashedFile, Box<dyn std::error::Error>> {
+    pub fn new(path : PathData, modified : SystemTime) -> Result<HashedFile, Box<dyn std::error::Error>> {
         use sha2::{Sha512, Digest};
         use std::{io, fs};
 
         let mut hasher = Sha512::new();
         let mut file = fs::File::open(&path)?;
         let size = io::copy(&mut file, &mut hasher)?;
-        Ok(HashedFile{path, hash : hasher.finalize().to_vec(), metadata, size})
+        Ok(HashedFile{path, hash : hasher.finalize().to_vec(), modified, size})
     }
     pub fn size(&self) -> FileSize {
         self.size
     }
-    pub fn metadata(&self) -> &MetaData {
-        &self.metadata
+    pub fn modified(&self) -> &SystemTime {
+        &self.modified
     }
     pub fn path(&self) -> &PathData {
         &self.path
@@ -81,13 +80,32 @@ impl HashedFiles {
     pub fn get_by_path (&self, path : &PathData) -> Option<&HashedFile> {
         self.by_path.get(path)
     }
-    pub fn add_file(&mut self, f: HashedFile) {
+    fn add_file(&mut self, f: HashedFile) {
         if let Some(v) = self.by_hash.get_mut(&f.hash) {
             v.push(f.path.clone())
         } else {
             self.by_hash.insert(f.hash.clone(), vec!(f.path.clone()));
         };
         self.by_path.insert(f.path.clone(), f);
+    }
+    pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
+        if let Some(old) = self.get_by_path(&path) {
+            // file is already indexed
+            if old.modified == modified {
+                // check last modified date
+                return;
+            } else {
+                // invalidate existing data
+                if let Some(old_dups) = self.by_hash.get(&old.hash) {
+                    let mut new_dups = old_dups.clone();
+                    new_dups.remove(new_dups.iter().position(|x| *x == path).unwrap());
+                    self.by_hash.insert(old.hash.clone(), new_dups);
+                }
+            }
+        }
+        if let Ok(hf) = HashedFile::new(path,modified) {
+            self.add_file(hf)
+        }
     }
     pub fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
         self.by_hash.iter().filter_map(|(_,x)| {
@@ -117,10 +135,5 @@ impl HashedFiles {
     }
     pub fn duplicates(& self) -> Vec<Duplicates> {
         self.duplicates_with_minsize(0)
-    }
-    pub fn add_path(&mut self, path: PathData) {
-        if let Ok(hf) = HashedFile::new(path,None) {
-            self.add_file(hf)
-        }
     }
 }
