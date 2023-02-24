@@ -2,7 +2,7 @@
 Deduplicator (Rust lib+bin)
 
 - Uses SHA-512 to detect duplicates based on file contents
-- Can cache results to avoid rehashing (files are invalidated if modifed date changes)
+- Can cache results to avoid rehashing (files are invalidated if modified date changes)
 
 Sample binary will find all duplicates in current folder and all subfolders. Caching is enabled using .fdedup_cache.bin
 
