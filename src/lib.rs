@@ -97,7 +97,7 @@ impl HashedFiles {
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
-        vprintln!("add_path {:?}, {:?}", path, modified);
+        //vprintln!("add_path {:?}, {:?}", path, modified);
         if let Some(old) = self.by_path.get(&path) {
             // file is already cached
             // check last modified date and reuse if same
@@ -144,19 +144,19 @@ impl HashedFiles {
         self.duplicates_with_minsize(0)
     }
     pub fn write_cache(& self, fname : &str) -> GenericResult<()> {
-        let bytes = bincode::serialize(&self.by_path)?;
+        let bytes = bincode::serialize(&self.by_path.values().collect::<Vec<_>>())?;
         std::fs::write(fname, &bytes[..])?;
         Ok(())
     }
     pub fn read_cache(&mut self, fname : &str) -> GenericResult<()> {
         let bytes = std::fs::read(fname)?;
-        let cache : HashMap<PathData,HashedFile> = bincode::deserialize(&bytes[..])?;
-        for (p,f) in cache.iter() {
-            if !self.by_path.contains_key(p) {
-                vprintln!("adding to cache: {}",p.display());
+        let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
+        for f in cache.iter() {
+            if !self.by_path.contains_key(&f.path) {
+                vprintln!("adding to cache: {}",f.path.display());
                 self.by_path.insert(f.path.clone(), f.clone());
             } else {
-                vprintln!("aready cached: {}",p.display());
+                vprintln!("aready cached: {}",f.path.display());
             }
         }
         Ok(())
@@ -166,7 +166,7 @@ impl HashedFiles {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
-            vprintln!("{:#?}",entry);
+            // vprintln!("{:#?}",entry);
             self.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
         }
         Ok(())
