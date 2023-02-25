@@ -1,7 +1,7 @@
 use serde::{Serialize,Deserialize};
 use std::{collections::HashMap, time::SystemTime};
 
-use crate::utils::{PathData,FileSize,HashData,GenericResult,vprintln};
+use crate::utils::{PathData,FileSize,HashData,GenericResult,vprintln,vvprintln};
 use crate::hashedfile::HashedFile;
 use crate::duplicates::Duplicates;
 
@@ -27,7 +27,7 @@ impl HashedFiles {
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
-        //vprintln!("add_path {:?}, {:?}", path, modified);
+        vvprintln!("add_path {:?}, {:?}", path, modified);
         if let Some(old) = self.by_path.get(&path) {
             // file is already cached
             // check last modified date and reuse if same
@@ -64,11 +64,6 @@ impl HashedFiles {
                         hex::encode(&group_info.hash),
                         group_info.size
                     ))
-                    // result.push(Duplicates {
-                    //     size : group_info.size,
-                    //     hex_hash : hex::encode(&group_info.hash),
-                    //     paths : group.iter().map(|e| e.path.clone()).collect::<Vec<_>>(),
-                    // })
                 }
             }
         }
@@ -101,7 +96,7 @@ impl HashedFiles {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
-            // vprintln!("{:#?}",entry);
+            vvprintln!("{:#?}",entry);
             use std::path::PathBuf;
             let mut path = entry.path().to_owned();
             if normalize_path && std::path::MAIN_SEPARATOR != '/' {
