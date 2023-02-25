@@ -161,13 +161,21 @@ impl HashedFiles {
         }
         Ok(())
     }
-    pub fn index_dir(&mut self, dir : &str) -> GenericResult<()> {
+    pub fn index_dir(&mut self, dir : &str, normalize_path : bool) -> GenericResult<()> {
         let walk = walkdir::WalkDir::new(dir).into_iter()
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
             // vprintln!("{:#?}",entry);
-            self.add_path(entry.path().to_owned(), entry.metadata()?.modified()?);
+            use std::path::PathBuf;
+            let mut path = entry.path().to_owned();
+            if normalize_path && std::path::MAIN_SEPARATOR != '/' {
+                // if normalize_path and the OS path separator is not '/' try to convert to that
+                if let Some(s) = path.to_str() {
+                    path = PathBuf::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
+                }
+            }
+            self.add_path(path, entry.metadata()?.modified()?);
         }
         Ok(())
     }
@@ -175,18 +183,23 @@ impl HashedFiles {
 
 pub struct Deduplicator {
     dirs : Vec<String>,
-    hashed_files : HashedFiles
+    hashed_files : HashedFiles,
+    normalize_path : bool,
 }
 
 impl Deduplicator {
     pub fn new(dir : &str) -> Self {
         Self {
             dirs : vec!(dir.to_owned()),
-            hashed_files : HashedFiles::new()
+            hashed_files : HashedFiles::new(),
+            normalize_path : false
         }
     }
     pub fn add_dir(&mut self, dir: &str) {
         self.dirs.push(dir.to_owned());
+    }
+    pub fn normalize_path(&mut self, normalize : bool) {
+        self.normalize_path = normalize;
     }
     pub fn read_cache(&mut self, fname: &str) {
         match self.hashed_files.read_cache(fname) {
@@ -199,7 +212,7 @@ impl Deduplicator {
     }
     pub fn run(&mut self) -> GenericResult<()> {
         for dir in &self.dirs {
-            self.hashed_files.index_dir(dir)?;
+            self.hashed_files.index_dir(dir,self.normalize_path)?;
         }
         for dup in self.hashed_files.duplicates() {
             println!("{}",dup);

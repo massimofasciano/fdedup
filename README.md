@@ -5,7 +5,8 @@ Deduplicator (Rust lib+bin)
 - Can cache results to avoid rehashing (files are invalidated if modified date changes)
 
 Sample binary will find all duplicates in current folder and all subfolders.
-Caching is enabled using .fdedup_cache_NN.bin (NN=47 on Linux and 92 on Windows based on path separator character code).
+Caching is enabled using file .fdedup_cache.bin
+Path normalization is enabled (to the / Linux-style separator).
 
 ```bash
 # fdedup
@@ -26,11 +27,12 @@ Can also be used as a library:
 use fdedup::{Deduplicator, GenericResult};
 
 fn main() -> GenericResult<()> {
-    let cache = format!(".fdedup_cache_{}.bin",std::path::MAIN_SEPARATOR as u8);
+    let cache = ".fdedup_cache.bin";
     let mut dedup = Deduplicator::new(".");
-    dedup.read_cache(cache.as_str());
+    dedup.normalize_path(true);
+    dedup.read_cache(cache);
     dedup.run()?;
-    dedup.write_cache(cache.as_str())?;
+    dedup.write_cache(cache)?;
     Ok(())
 }
 ```
