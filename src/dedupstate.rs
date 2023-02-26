@@ -1,7 +1,7 @@
 use serde::{Serialize,Deserialize};
 use std::{collections::HashMap, time::SystemTime};
 
-use crate::types::{PathData,FileSize,HashData,GenericResult};
+use crate::types::{PathData,FileSize,HashData,Result};
 use crate::macros::{vprintln,vvprintln};
 use crate::hashedfile::HashedFile;
 use crate::duplicates::Duplicates;
@@ -72,12 +72,12 @@ impl DedupState {
     pub fn duplicates(& self) -> Vec<Duplicates> {
         self.duplicates_with_minsize(0)
     }
-    pub fn write_cache(& self, fname : &str) -> GenericResult<()> {
+    pub fn write_cache(& self, fname : &str) -> Result<()> {
         let bytes = bincode::serialize(&self.by_path.values().collect::<Vec<_>>())?;
         std::fs::write(fname, &bytes[..])?;
         Ok(())
     }
-    pub fn read_cache(&mut self, fname : &str) -> GenericResult<()> {
+    pub fn read_cache(&mut self, fname : &str) -> Result<()> {
         let bytes = std::fs::read(fname)?;
         let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
         for f in cache.iter() {
@@ -90,7 +90,7 @@ impl DedupState {
         }
         Ok(())
     }
-    pub fn index_dir(&mut self, dir : &str, normalize_path : bool) -> GenericResult<()> {
+    pub fn index_dir(&mut self, dir : &str, normalize_path : bool) -> Result<()> {
         let walk = walkdir::WalkDir::new(dir).into_iter()
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());

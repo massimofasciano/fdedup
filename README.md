@@ -24,9 +24,9 @@ Path normalization is enabled (to the / Linux-style separator).
 Can also be used as a library:
 
 ```rust
-use fdedup::{Deduplicator, GenericResult};
+use fdedup::{Deduplicator};
 
-fn main() -> GenericResult<()> {
+fn main() -> fdedup::Result<()> {
     let cache = ".fdedup_cache.bin";
     let mut dedup = Deduplicator::default();
     dedup.add_dir(".");

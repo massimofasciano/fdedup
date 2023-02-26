@@ -1,4 +1,4 @@
-use crate::types::{GenericResult};
+use crate::types::{Result};
 use crate::dedupstate::DedupState;
 
 pub struct Deduplicator {
@@ -26,10 +26,10 @@ impl Deduplicator {
             _ => { println!("Warning: could not load cache file {}",fname); }
         }
     }
-    pub fn write_cache(&mut self, fname: &str) -> GenericResult<()>{
+    pub fn write_cache(&mut self, fname: &str) -> Result<()>{
         self.dedup_state.write_cache(fname)
     }
-    pub fn run(&mut self) -> GenericResult<()> {
+    pub fn run(&mut self) -> Result<()> {
         for dir in &self.dirs {
             self.dedup_state.index_dir(dir,self.normalize_path)?;
         }

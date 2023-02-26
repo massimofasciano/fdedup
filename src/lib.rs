@@ -4,5 +4,5 @@ pub mod duplicates;
 pub mod hashedfile;
 pub mod dedupstate;
 pub mod deduplicator;
-pub use types::GenericResult;
+pub use types::Result;
 pub use deduplicator::Deduplicator;

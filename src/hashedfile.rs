@@ -1,7 +1,7 @@
 use serde::{Serialize,Deserialize};
 use std::{time::SystemTime};
 
-use crate::types::{PathData,FileSize,HashData,GenericResult};
+use crate::types::{PathData,FileSize,HashData,Result};
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
@@ -13,7 +13,7 @@ pub struct HashedFile {
 }
 
 impl HashedFile {
-    pub fn new(path : PathData, modified : SystemTime) -> GenericResult<Self> {
+    pub fn new(path : PathData, modified : SystemTime) -> Result<Self> {
         use sha2::{Sha512, Digest};
         use std::{io, fs};
 
