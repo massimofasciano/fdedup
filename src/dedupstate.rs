@@ -8,17 +8,15 @@ use crate::duplicates::Duplicates;
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
+#[derive(Default)]
 pub struct DedupState {
     by_hash : HashMap<HashData,Vec<PathData>>,
     by_path : HashMap<PathData,HashedFile>,
 }
 
 impl DedupState {
-    pub fn new() -> DedupState {
-        DedupState {
-            by_hash : HashMap::new(),
-            by_path : HashMap::new(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
     fn add_file_by_hash(&mut self, f: &HashedFile) {
         if let Some(v) = self.by_hash.get_mut(f.hash()) {

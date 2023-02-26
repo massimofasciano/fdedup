@@ -8,11 +8,10 @@ pub struct Deduplicator {
 }
 
 impl Deduplicator {
-    pub fn new(dir : &str) -> Self {
+    pub fn new(dirs : &[&str]) -> Self {
         Self {
-            dirs : vec!(dir.to_owned()),
-            dedup_state : DedupState::new(),
-            normalize_path : false
+            dirs : dirs.iter().map(|&s|s.to_owned()).collect(),
+            ..Default::default()
         }
     }
     pub fn add_dir(&mut self, dir: &str) {
@@ -41,3 +40,12 @@ impl Deduplicator {
     }
 }
 
+impl Default for Deduplicator {
+    fn default() -> Self {
+        Self {
+            dirs : Vec::<String>::default(),
+            dedup_state : DedupState::new(),
+            normalize_path : false
+        }
+    }
+}

@@ -8,8 +8,8 @@ pub struct Duplicates {
 }
 
 impl Duplicates {
-    pub fn new(paths : Vec<PathData>, hex_hash : String, size : FileSize) -> Duplicates {
-        Duplicates { paths, hex_hash, size }
+    pub fn new(paths : Vec<PathData>, hex_hash : String, size : FileSize) -> Self {
+        Self { paths, hex_hash, size }
     }
     pub fn size(&self) -> FileSize {
         self.size
