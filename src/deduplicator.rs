@@ -3,7 +3,7 @@ use crate::dedupstate::DedupState;
 
 pub struct Deduplicator {
     dirs : Vec<String>,
-    hashed_files : DedupState,
+    dedup_state : DedupState,
     normalize_path : bool,
 }
 
@@ -11,7 +11,7 @@ impl Deduplicator {
     pub fn new(dir : &str) -> Self {
         Self {
             dirs : vec!(dir.to_owned()),
-            hashed_files : DedupState::new(),
+            dedup_state : DedupState::new(),
             normalize_path : false
         }
     }
@@ -22,19 +22,19 @@ impl Deduplicator {
         self.normalize_path = normalize;
     }
     pub fn read_cache(&mut self, fname: &str) {
-        match self.hashed_files.read_cache(fname) {
+        match self.dedup_state.read_cache(fname) {
             Ok(_) => { }
             _ => { println!("Warning: could not load cache file {}",fname); }
         }
     }
     pub fn write_cache(&mut self, fname: &str) -> GenericResult<()>{
-        self.hashed_files.write_cache(fname)
+        self.dedup_state.write_cache(fname)
     }
     pub fn run(&mut self) -> GenericResult<()> {
         for dir in &self.dirs {
-            self.hashed_files.index_dir(dir,self.normalize_path)?;
+            self.dedup_state.index_dir(dir,self.normalize_path)?;
         }
-        for dup in self.hashed_files.duplicates() {
+        for dup in self.dedup_state.duplicates() {
             println!("{}",dup);
         }
         Ok(())
