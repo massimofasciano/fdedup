@@ -8,14 +8,14 @@ use crate::duplicates::Duplicates;
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
-pub struct HashedFiles {
+pub struct DedupState {
     by_hash : HashMap<HashData,Vec<PathData>>,
     by_path : HashMap<PathData,HashedFile>,
 }
 
-impl HashedFiles {
-    pub fn new() -> HashedFiles {
-        HashedFiles {
+impl DedupState {
+    pub fn new() -> DedupState {
+        DedupState {
             by_hash : HashMap::new(),
             by_path : HashMap::new(),
         }

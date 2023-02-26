@@ -1,9 +1,9 @@
 use crate::types::{GenericResult};
-use crate::hashedfiles::HashedFiles;
+use crate::dedupstate::DedupState;
 
 pub struct Deduplicator {
     dirs : Vec<String>,
-    hashed_files : HashedFiles,
+    hashed_files : DedupState,
     normalize_path : bool,
 }
 
@@ -11,7 +11,7 @@ impl Deduplicator {
     pub fn new(dir : &str) -> Self {
         Self {
             dirs : vec!(dir.to_owned()),
-            hashed_files : HashedFiles::new(),
+            hashed_files : DedupState::new(),
             normalize_path : false
         }
     }
