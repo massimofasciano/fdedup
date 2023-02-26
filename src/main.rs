@@ -1,6 +1,6 @@
-use fdedup::{Deduplicator};
+use fdedup::{Deduplicator,Result};
 
-fn main() -> fdedup::Result<()> {
+fn main() -> Result<()> {
     let cache = ".fdedup_cache.bin";
     let mut dedup = Deduplicator::default();
     dedup.add_dir(".");
