@@ -19,3 +19,8 @@ opt-level = 3
 panic = "abort"
 rpath = false
 strip = true
+
+[features]
+default = []
+verbose = []
+very-verbose = ["verbose"]
