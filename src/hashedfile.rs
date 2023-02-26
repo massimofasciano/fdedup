@@ -1,7 +1,7 @@
 use serde::{Serialize,Deserialize};
 use std::{time::SystemTime};
 
-use crate::utils::{PathData,FileSize,HashData,GenericResult};
+use crate::types::{PathData,FileSize,HashData,GenericResult};
 
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]

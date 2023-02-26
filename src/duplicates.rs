@@ -1,4 +1,4 @@
-use crate::utils::{PathData,FileSize};
+use crate::types::{PathData,FileSize};
 
 #[derive(Debug)]
 pub struct Duplicates {

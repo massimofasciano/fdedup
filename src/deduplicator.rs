@@ -1,4 +1,4 @@
-use crate::utils::{GenericResult};
+use crate::types::{GenericResult};
 use crate::hashedfiles::HashedFiles;
 
 pub struct Deduplicator {

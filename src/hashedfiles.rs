@@ -1,7 +1,8 @@
 use serde::{Serialize,Deserialize};
 use std::{collections::HashMap, time::SystemTime};
 
-use crate::utils::{PathData,FileSize,HashData,GenericResult,vprintln,vvprintln};
+use crate::types::{PathData,FileSize,HashData,GenericResult};
+use crate::macros::{vprintln,vvprintln};
 use crate::hashedfile::HashedFile;
 use crate::duplicates::Duplicates;
 
