@@ -20,10 +20,10 @@ impl HashedFiles {
         }
     }
     fn add_file_by_hash(&mut self, f: &HashedFile) {
-        if let Some(v) = self.by_hash.get_mut(&f.hash) {
+        if let Some(v) = self.by_hash.get_mut(f.hash()) {
             v.push(f.path.clone())
         } else {
-            self.by_hash.insert(f.hash.clone(), vec!(f.path.clone()));
+            self.by_hash.insert(f.hash().clone(), vec!(f.path.clone()));
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
@@ -61,7 +61,7 @@ impl HashedFiles {
                 if group_info.size() > minsize {
                     result.push(Duplicates::new(
                         group.iter().map(|e| e.path.clone()).collect::<Vec<_>>(),
-                        hex::encode(&group_info.hash),
+                        hex::encode(group_info.hash()),
                         group_info.size()
                     ))
                 }

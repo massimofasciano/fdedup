@@ -7,7 +7,7 @@ use crate::utils::{PathData,FileSize,HashData,GenericResult};
 #[derive(Serialize, Deserialize)]
 pub struct HashedFile {
     pub (crate) path : PathData,
-    pub (crate) hash : HashData,
+    hash : HashData,
     modified : SystemTime,
     size : FileSize,
 }
@@ -25,11 +25,14 @@ impl HashedFile {
     pub fn path(&self) -> &PathData {
         &self.path
     }
-    pub fn size(&self) -> u64 {
+    pub fn size(&self) -> FileSize {
         self.size
     }
     pub fn modified(&self) -> SystemTime {
         self.modified
+    }
+    pub fn hash(&self) -> &HashData {
+        &self.hash
     }
 }
 
