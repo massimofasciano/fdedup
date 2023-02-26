@@ -21,9 +21,9 @@ impl HashedFiles {
     }
     fn add_file_by_hash(&mut self, f: &HashedFile) {
         if let Some(v) = self.by_hash.get_mut(f.hash()) {
-            v.push(f.path.clone())
+            v.push(f.path().clone())
         } else {
-            self.by_hash.insert(f.hash().clone(), vec!(f.path.clone()));
+            self.by_hash.insert(f.hash().clone(), vec!(f.path().clone()));
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
@@ -41,7 +41,7 @@ impl HashedFiles {
         if let Ok(hf) = HashedFile::new(path,modified) {
             vprintln!("hashing {}",hf.path.display());
             self.add_file_by_hash(&hf);
-            self.by_path.insert(hf.path.clone(), hf);
+            self.by_path.insert(hf.path().clone(), hf);
         }
     }
     fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
@@ -60,7 +60,7 @@ impl HashedFiles {
                 let group_info = group[0];
                 if group_info.size() > minsize {
                     result.push(Duplicates::new(
-                        group.iter().map(|e| e.path.clone()).collect::<Vec<_>>(),
+                        group.iter().map(|e| e.path().clone()).collect::<Vec<_>>(),
                         hex::encode(group_info.hash()),
                         group_info.size()
                     ))
@@ -82,9 +82,9 @@ impl HashedFiles {
         let bytes = std::fs::read(fname)?;
         let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
         for f in cache.iter() {
-            if !self.by_path.contains_key(&f.path) {
+            if !self.by_path.contains_key(f.path()) {
                 vprintln!("adding to cache: {}",f.path.display());
-                self.by_path.insert(f.path.clone(), f.clone());
+                self.by_path.insert(f.path().clone(), f.clone());
             } else {
                 vprintln!("aready cached: {}",f.path.display());
             }

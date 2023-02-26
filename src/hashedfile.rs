@@ -6,7 +6,7 @@ use crate::utils::{PathData,FileSize,HashData,GenericResult};
 #[derive(Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct HashedFile {
-    pub (crate) path : PathData,
+    path : PathData,
     hash : HashData,
     modified : SystemTime,
     size : FileSize,
