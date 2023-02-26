@@ -13,14 +13,14 @@ pub struct HashedFile {
 }
 
 impl HashedFile {
-    pub fn new(path : PathData, modified : SystemTime) -> GenericResult<HashedFile> {
+    pub fn new(path : PathData, modified : SystemTime) -> GenericResult<Self> {
         use sha2::{Sha512, Digest};
         use std::{io, fs};
 
         let mut hasher = Sha512::new();
         let mut file = fs::File::open(&path)?;
         let size = io::copy(&mut file, &mut hasher)?;
-        Ok(HashedFile{path, hash : hasher.finalize().to_vec(), modified, size})
+        Ok(Self{path, hash : hasher.finalize().to_vec(), modified, size})
     }
     pub fn path(&self) -> &PathData {
         &self.path
