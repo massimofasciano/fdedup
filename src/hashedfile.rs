@@ -8,8 +8,8 @@ use crate::utils::{PathData,FileSize,HashData,GenericResult};
 pub struct HashedFile {
     pub (crate) path : PathData,
     pub (crate) hash : HashData,
-    pub (crate) modified : SystemTime,
-    pub (crate) size : FileSize,
+    modified : SystemTime,
+    size : FileSize,
 }
 
 impl HashedFile {
@@ -21,6 +21,15 @@ impl HashedFile {
         let mut file = fs::File::open(&path)?;
         let size = io::copy(&mut file, &mut hasher)?;
         Ok(HashedFile{path, hash : hasher.finalize().to_vec(), modified, size})
+    }
+    pub fn path(&self) -> &PathData {
+        &self.path
+    }
+    pub fn size(&self) -> u64 {
+        self.size
+    }
+    pub fn modified(&self) -> SystemTime {
+        self.modified
     }
 }
 

@@ -31,7 +31,7 @@ impl HashedFiles {
         if let Some(old) = self.by_path.get(&path) {
             // file is already cached
             // check last modified date and reuse if same
-                if old.modified == modified {
+                if old.modified() == modified {
                 vprintln!("reusing {}",old.path.display());
                 self.add_file_by_hash(&old.clone());
                 return;
@@ -58,11 +58,11 @@ impl HashedFiles {
             let group : Vec<_> = group.collect();
             if group.len() > 1 {
                 let group_info = group[0];
-                if group_info.size > minsize {
+                if group_info.size() > minsize {
                     result.push(Duplicates::new(
                         group.iter().map(|e| e.path.clone()).collect::<Vec<_>>(),
                         hex::encode(&group_info.hash),
-                        group_info.size
+                        group_info.size()
                     ))
                 }
             }
