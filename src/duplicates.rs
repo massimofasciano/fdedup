@@ -17,18 +17,18 @@ impl Duplicates {
     pub fn paths(&self) -> &Vec<PathData> {
         &self.paths
     }
-    pub fn display_paths(&self) -> impl Iterator<Item=std::path::Display> + '_ {
+    pub fn paths_as_display(&self) -> impl Iterator<Item=std::path::Display> + '_ {
         self.paths.iter().map(|p| p.display())
     }
-    pub fn hex_hash(&self) -> &String {
+    pub fn hash_as_hex(&self) -> &String {
         &self.hex_hash
     }
 }
 
 impl std::fmt::Display for Duplicates {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        writeln!(f, "# {} {}",self.size(), self.hex_hash())?;
-        for p in self.display_paths() {
+        writeln!(f, "# {} {}",self.size(), self.hash_as_hex())?;
+        for p in self.paths_as_display() {
             writeln!(f, "{}",p)?
         }
         writeln!(f)
