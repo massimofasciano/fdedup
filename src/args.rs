@@ -31,11 +31,11 @@ pub struct Args {
     pub disable_cache: bool,
     
     /// Start with empty cache
-    #[arg(short, long, default_value_t = false)]
+    #[arg(short, long, default_value_t = false, conflicts_with="disable_cache")]
     pub empty_cache: bool,
     
     /// Where to store the cache
-    #[arg(short, long, value_name = "<FILE>", default_value = ".fdedup_cache.bin")]
+    #[arg(short, long, value_name = "<FILE>", default_value = ".fdedup_cache.bin", conflicts_with="disable_cache")]
     pub cache_file: PathData,
 
     /// Normalize pathnames to Linux-style /
