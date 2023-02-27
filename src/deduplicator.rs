@@ -2,20 +2,20 @@ use crate::types::{Result, PathData};
 use crate::dedupstate::DedupState;
 
 pub struct Deduplicator {
-    dirs : Vec<String>,
+    dirs : Vec<PathData>,
     dedup_state : DedupState,
     normalize_path : bool,
 }
 
 impl Deduplicator {
-    pub fn new(dirs : &[&str]) -> Self {
+    pub fn new<S,D>(dirs : D) -> Self where S : Into<PathData>, D: Into<Vec<S>> {
         Self {
-            dirs : dirs.iter().map(|&s|s.to_owned()).collect(),
+            dirs : dirs.into().into_iter().map(|d|d.into()).collect(),
             ..Default::default()
         }
     }
-    pub fn add_dir(&mut self, dir: &str) {
-        self.dirs.push(dir.to_owned());
+    pub fn add_dir<S>(&mut self, dir: S) where S : Into<PathData> {
+        self.dirs.push(dir.into());
     }
     pub fn normalize_path(&mut self, normalize : bool) {
         self.normalize_path = normalize;
@@ -49,7 +49,7 @@ impl Deduplicator {
 impl Default for Deduplicator {
     fn default() -> Self {
         Self {
-            dirs : Vec::<String>::default(),
+            dirs : Vec::<PathData>::default(),
             dedup_state : DedupState::new(),
             normalize_path : false
         }

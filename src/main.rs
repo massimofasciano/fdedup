@@ -4,12 +4,8 @@ fn main() -> Result<()> {
     let args = Args::parse();
     Deduplicator::set_verbosity(args.verbose);
     let mut dedup = Deduplicator::default();
-    if args.folders.len() > 0 {
-        for d in args.folders {
-            dedup.add_dir(d.as_ref());
-        }
-    } else {
-        dedup.add_dir(".");
+    for d in args.folders {
+        dedup.add_dir(d);
     }
     dedup.normalize_path(args.normalize);
     if !args.disable_cache {

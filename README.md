@@ -2,14 +2,14 @@
 Deduplicator (Rust lib+bin)
 
 - Uses SHA-512 to detect duplicates based on file contents
-- Can cache results to avoid rehashing (files are invalidated if modified date changes)
+- Caches results to avoid rehashing (files are invalidated if modified date changes)
 
-Sample binary will find all duplicates in current folder and all subfolders.<br/>
-Caching is enabled using file .fdedup_cache.bin<br/>
-Path normalization is enabled (to the / Linux-style separator).
+Sample binary will find all duplicates recursively (default is current folder and all subfolders).<br/>
+Caching is enabled by default (default file is .fdedup_cache.bin)<br/>
+Path normalization is enabled via -n (to the / Linux-style separator).
 
 ```bash
-# fdedup
+$ fdedup -n 
 
 # 2199552 0682013c8c57565cd358fbe482f944ab7efc8b0ea0fd6740266a1fd5f2938f3433e7cdc74529bea7e2a35ad653befa1beedabc7f249f6cb620371e685fa05116
 ./target/debug/build/winapi-61fd0ec083e2af74/build_script_build.pdb
@@ -24,43 +24,22 @@ Path normalization is enabled (to the / Linux-style separator).
 Can also be used as a library:
 
 ```rust
-use fdedup::{Deduplicator,Result};
-use clap::Parser;
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-   folders: Vec<String>,
-   #[arg(short, long, default_value_t = false)]
-   cache: bool,
-   #[arg(long, value_name = "<FILE>")]
-   cache_file: Option<String>,
-   #[arg(short, long, default_value_t = false)]
-   normalize: bool,
-}
+use fdedup::{Deduplicator,Result,args::{Args,Parser}};
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let cache_default = ".fdedup_cache.bin";
+    Deduplicator::set_verbosity(args.verbose);
     let mut dedup = Deduplicator::default();
-    if args.folders.len() > 0 {
-        for d in args.folders {
-            dedup.add_dir(d.as_ref());
-        }
-    } else {
-        dedup.add_dir(".");
+    for d in args.folders {
+        dedup.add_dir(d);
     }
     dedup.normalize_path(args.normalize);
-    if let Some(cache_file) = &args.cache_file {
-        dedup.read_cache(cache_file);
-    } else if args.cache {
-        dedup.read_cache(cache_default);
+    if !args.disable_cache {
+        dedup.read_cache(&args.cache_file);
     }
     dedup.run()?;
-    if let Some(cache_file) = &args.cache_file {
-        dedup.write_cache(cache_file)?;
-    } else if args.cache {
-        dedup.write_cache(cache_default)?;
+    if !args.disable_cache {
+        dedup.write_cache(&args.cache_file)?;
     }
     Ok(())
 }

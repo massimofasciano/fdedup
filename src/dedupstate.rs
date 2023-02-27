@@ -91,8 +91,8 @@ impl DedupState {
         }
         Ok(())
     }
-    pub fn index_dir(&mut self, dir : &str, normalize_path : bool) -> Result<()> {
-        let walk = walkdir::WalkDir::new(dir).into_iter()
+    pub fn index_dir<S>(&mut self, dir : S, normalize_path : bool) -> Result<()> where S : Into<PathData> {
+            let walk = walkdir::WalkDir::new(dir.into()).into_iter()
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
