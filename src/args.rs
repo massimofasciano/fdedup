@@ -22,6 +22,6 @@ pub struct Args {
     pub normalize: bool,
 
     /// Verbose output (repeat for more verbosity)
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    pub verbose: u8,
+    #[arg(short='v', long="verbose", action = clap::ArgAction::Count, hide=!cfg!(verbose))]
+    pub verbosity: u8,
 }

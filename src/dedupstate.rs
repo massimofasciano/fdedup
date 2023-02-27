@@ -2,7 +2,7 @@ use serde::{Serialize,Deserialize};
 use std::{collections::HashMap, time::SystemTime};
 
 use crate::types::{PathData,FileSize,HashData,Result};
-use crate::verbose::{vprintln,vvprintln};
+use crate::verbose::{vprintln};
 use crate::hashedfile::HashedFile;
 use crate::duplicates::Duplicates;
 
@@ -27,19 +27,19 @@ impl DedupState {
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
-        vvprintln!(self.verbosity,"add_path {:?}, {:?}", path, modified);
+        vprintln!(2,self.verbosity,"add_path {:?}, {:?}", path, modified);
         if let Some(old) = self.by_path.get(&path) {
             // file is already cached
             // check last modified date and reuse if same
                 if old.modified() == modified {
-                vprintln!(self.verbosity,"reusing {}",old.path().display());
+                vprintln!(1,self.verbosity,"reusing {}",old.path().display());
                 self.add_file_by_hash(&old.clone());
                 return;
             }
         }
         // hash new entry and add it
         if let Ok(hf) = HashedFile::new(path,modified) {
-            vprintln!(self.verbosity,"hashing {}",hf.path().display());
+            vprintln!(1,self.verbosity,"hashing {}",hf.path().display());
             self.add_file_by_hash(&hf);
             self.by_path.insert(hf.path().clone(), hf);
         }
@@ -84,10 +84,10 @@ impl DedupState {
         let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
         for f in cache.iter() {
             if !self.by_path.contains_key(f.path()) {
-                vprintln!(self.verbosity,"adding to cache: {}",f.path().display());
+                vprintln!(1,self.verbosity,"adding to cache: {}",f.path().display());
                 self.by_path.insert(f.path().clone(), f.clone());
             } else {
-                vprintln!(self.verbosity,"aready cached: {}",f.path().display());
+                vprintln!(1,self.verbosity,"aready cached: {}",f.path().display());
             }
         }
         Ok(())
@@ -97,7 +97,7 @@ impl DedupState {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
-            vvprintln!(self.verbosity,"{:#?}",entry);
+            vprintln!(2,self.verbosity,"{:#?}",entry);
             use std::path::PathBuf;
             let mut path = entry.path().to_owned();
             if normalize_path && std::path::MAIN_SEPARATOR != '/' {

@@ -3,7 +3,8 @@ use fdedup::{Deduplicator,Result,args::{Args,Parser}};
 fn main() -> Result<()> {
     let args = Args::parse();
     let mut dedup = Deduplicator::default();
-    dedup.set_verbosity(args.verbose);
+    #[cfg(feature = "verbose")]
+    dedup.set_verbosity(args.verbosity);
     for d in args.folders {
         dedup.add_dir(d);
     }
