@@ -52,6 +52,14 @@ impl DedupState {
         }
         false
     }
+    fn apply_path_normalization(&self, path: &mut PathData) {
+        if self.normalize_path && std::path::MAIN_SEPARATOR != '/' {
+            // if normalize_path and the OS path separator is not '/' try to convert to that
+            if let Some(s) = path.to_str() {
+                *path = PathData::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
+            }
+        }
+    }
     fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
         self.by_hash.iter().filter_map(|(_,x)| {
             if (*x).len() > 1 {
@@ -108,15 +116,8 @@ impl DedupState {
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
             vprintln!(4,self.verbosity,"{:#?}",entry);
-            // use std::path::PathBuf;
             let mut path = entry.path().to_owned();
-            self.normalize_path(&mut path);
-            // if normalize_path && std::path::MAIN_SEPARATOR != '/' {
-            //     // if normalize_path and the OS path separator is not '/' try to convert to that
-            //     if let Some(s) = path.to_str() {
-            //         path = PathBuf::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
-            //     }
-            // }
+            self.apply_path_normalization(&mut path);
             let modified = entry.metadata()?.modified()?;
             if !self.reuse_if_cached(&path, &modified) {
                 let txc = tx.clone();
@@ -141,14 +142,6 @@ impl DedupState {
         }
         Ok(())
     }
-    fn normalize_path(&self, path: &mut PathData) {
-        if self.normalize_path && std::path::MAIN_SEPARATOR != '/' {
-            // if normalize_path and the OS path separator is not '/' try to convert to that
-            if let Some(s) = path.to_str() {
-                *path = PathData::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
-            }
-        }
-    }
     pub fn index_dir_single_threaded<S>(&mut self, dir : S) -> Result<()> where S : Into<PathData> {
         let walk = walkdir::WalkDir::new(dir.into()).into_iter()
                 .filter_map(|e| e.ok())
@@ -156,13 +149,7 @@ impl DedupState {
         for entry in walk {
             vprintln!(4,self.verbosity,"{:#?}",entry);
             let mut path = entry.path().to_owned();
-            self.normalize_path(&mut path);
-            // if normalize_path && std::path::MAIN_SEPARATOR != '/' {
-            //     // if normalize_path and the OS path separator is not '/' try to convert to that
-            //     if let Some(s) = path.to_str() {
-            //         path = PathBuf::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
-            //     }
-            // }
+            self.apply_path_normalization(&mut path);
             let modified = entry.metadata()?.modified()?;
             if !self.reuse_if_cached(&path, &modified) {
                 vprintln!(1,self.verbosity,"start hashing {}",path.display());
