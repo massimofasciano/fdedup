@@ -1,5 +1,8 @@
 use serde::{Serialize,Deserialize};
+use std::cmp::max;
 use std::{collections::HashMap, time::SystemTime};
+use threadpool::ThreadPool;
+use std::sync::mpsc::channel;
 
 use crate::types::{PathData,FileSize,HashData,Result};
 use crate::verbose::{vprintln};
@@ -13,36 +16,41 @@ pub struct DedupState {
     by_hash : HashMap<HashData,Vec<PathData>>,
     by_path : HashMap<PathData,HashedFile>,
     verbosity : u8,
+    threads : usize,
+    normalize_path: bool,
 }
 
 impl DedupState {
     pub fn new() -> Self {
         Self::default()
     }
-    fn add_file_by_hash(&mut self, f: &HashedFile) {
+    pub fn set_threads(&mut self, threads : usize) {
+        self.threads = threads;
+    }
+    pub fn set_normalize_path(&mut self, normalize_path : bool) {
+        self.normalize_path = normalize_path;
+    }
+    fn index_file_by_hash(&mut self, f: &HashedFile) {
         if let Some(v) = self.by_hash.get_mut(f.hash()) {
             v.push(f.path().clone())
         } else {
             self.by_hash.insert(f.hash().clone(), vec!(f.path().clone()));
         };
     }
-    pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
-        vprintln!(2,self.verbosity,"add_path {:?}, {:?}", path, modified);
-        if let Some(old) = self.by_path.get(&path) {
-            // file is already cached
-            // check last modified date and reuse if same
-                if old.modified() == modified {
-                vprintln!(1,self.verbosity,"reusing {}",old.path().display());
-                self.add_file_by_hash(&old.clone());
-                return;
+    fn add_hashed_file(&mut self, hf: HashedFile) {
+        vprintln!(3,self.verbosity,"add_hashed_file {:?}", hf);
+        self.index_file_by_hash(&hf);
+        self.by_path.insert(hf.path().clone(), hf);
+    }
+    fn reuse_if_cached(&mut self, path : &PathData, modified : &SystemTime) -> bool {
+        if let Some(old) = self.by_path.get(path) {
+            if old.modified() == *modified {
+                vprintln!(1,self.verbosity,"cache hit for {}",old.path().display());
+                self.add_hashed_file(old.clone());
+                return true;
             }
         }
-        // hash new entry and add it
-        if let Ok(hf) = HashedFile::new(path,modified) {
-            vprintln!(1,self.verbosity,"hashing {}",hf.path().display());
-            self.add_file_by_hash(&hf);
-            self.by_path.insert(hf.path().clone(), hf);
-        }
+        false
     }
     fn duplicates_as_hashed_files(& self) -> impl Iterator<Item=impl Iterator <Item=&HashedFile>> {
         self.by_hash.iter().filter_map(|(_,x)| {
@@ -92,23 +100,85 @@ impl DedupState {
         }
         Ok(())
     }
-    pub fn index_dir<S>(&mut self, dir : S, normalize_path : bool) -> Result<()> where S : Into<PathData> {
-            let walk = walkdir::WalkDir::new(dir.into()).into_iter()
+    pub fn index_dir_multi_threaded<S>(&mut self, dir : S) -> Result<()> where S : Into<PathData> {
+        let (tx, rx) = channel();
+        let pool = ThreadPool::new(max(self.threads as usize,1));
+        let walk = walkdir::WalkDir::new(dir.into()).into_iter()
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
-            vprintln!(2,self.verbosity,"{:#?}",entry);
-            use std::path::PathBuf;
+            vprintln!(4,self.verbosity,"{:#?}",entry);
+            // use std::path::PathBuf;
             let mut path = entry.path().to_owned();
-            if normalize_path && std::path::MAIN_SEPARATOR != '/' {
-                // if normalize_path and the OS path separator is not '/' try to convert to that
-                if let Some(s) = path.to_str() {
-                    path = PathBuf::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
-                }
+            self.normalize_path(&mut path);
+            // if normalize_path && std::path::MAIN_SEPARATOR != '/' {
+            //     // if normalize_path and the OS path separator is not '/' try to convert to that
+            //     if let Some(s) = path.to_str() {
+            //         path = PathBuf::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
+            //     }
+            // }
+            let modified = entry.metadata()?.modified()?;
+            if !self.reuse_if_cached(&path, &modified) {
+                let txc = tx.clone();
+                #[cfg(feature = "verbose")]
+                let verbosity = self.verbosity;
+                pool.execute(move|| {
+                    vprintln!(1,verbosity,"start hashing job for {}",path.display());
+                    if let Ok(hf) = HashedFile::new(path,modified) {
+                        vprintln!(1,verbosity,"end hashing job for {}",hf.path().display());
+                        txc.send(Some(hf)).unwrap();
+                    } else {
+                        txc.send(None).unwrap();
+                    }
+                });
             }
-            self.add_path(path, entry.metadata()?.modified()?);
+        }
+        drop(tx);
+        for hfo in rx {
+            if let Some(hf) = hfo {
+                self.add_hashed_file(hf);
+            }
         }
         Ok(())
+    }
+    fn normalize_path(&self, path: &mut PathData) {
+        if self.normalize_path && std::path::MAIN_SEPARATOR != '/' {
+            // if normalize_path and the OS path separator is not '/' try to convert to that
+            if let Some(s) = path.to_str() {
+                *path = PathData::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
+            }
+        }
+    }
+    pub fn index_dir_single_threaded<S>(&mut self, dir : S) -> Result<()> where S : Into<PathData> {
+        let walk = walkdir::WalkDir::new(dir.into()).into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().is_file());
+        for entry in walk {
+            vprintln!(4,self.verbosity,"{:#?}",entry);
+            let mut path = entry.path().to_owned();
+            self.normalize_path(&mut path);
+            // if normalize_path && std::path::MAIN_SEPARATOR != '/' {
+            //     // if normalize_path and the OS path separator is not '/' try to convert to that
+            //     if let Some(s) = path.to_str() {
+            //         path = PathBuf::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
+            //     }
+            // }
+            let modified = entry.metadata()?.modified()?;
+            if !self.reuse_if_cached(&path, &modified) {
+                vprintln!(1,self.verbosity,"start hashing {}",path.display());
+                if let Ok(hf) = HashedFile::new(path,modified) {
+                    vprintln!(1,self.verbosity,"end hashing {}",hf.path().display());
+                    self.add_hashed_file(hf);
+                }
+            }
+        }
+        Ok(())
+    }
+    pub fn index_dir<S>(&mut self, dir : S) -> Result<()> where S : Into<PathData> {
+        #[cfg(feature = "threads")]
+        return self.index_dir_multi_threaded(dir);
+        #[cfg(not(feature = "threads"))]
+        return self.index_dir_single_threaded(dir);
     }
     pub fn set_verbosity(&mut self, verbosity : u8) {
         self.verbosity = verbosity;

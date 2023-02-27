@@ -4,7 +4,6 @@ use crate::dedupstate::DedupState;
 pub struct Deduplicator {
     dirs : Vec<PathData>,
     dedup_state : DedupState,
-    normalize_path : bool,
 }
 
 impl Deduplicator {
@@ -14,11 +13,14 @@ impl Deduplicator {
             ..Default::default()
         }
     }
+    pub fn set_threads(&mut self, threads : usize) {
+        self.dedup_state.set_threads(threads);
+    }
     pub fn add_dir<S>(&mut self, dir: S) where S : Into<PathData> {
         self.dirs.push(dir.into());
     }
     pub fn normalize_path(&mut self, normalize : bool) {
-        self.normalize_path = normalize;
+        self.dedup_state.set_normalize_path(normalize);
     }
     pub fn read_cache<S>(&mut self, fname: S) where S: Into<PathData> {
         let fname = fname.into();
@@ -32,7 +34,7 @@ impl Deduplicator {
     }
     pub fn run(&mut self) -> Result<()> {
         for dir in &self.dirs {
-            self.dedup_state.index_dir(dir,self.normalize_path)?;
+            self.dedup_state.index_dir(dir)?;
         }
         for dup in self.dedup_state.duplicates() {
             println!("{}",dup);
@@ -49,7 +51,6 @@ impl Default for Deduplicator {
         Self {
             dirs : Vec::<PathData>::default(),
             dedup_state : DedupState::new(),
-            normalize_path : false
         }
     }
 }

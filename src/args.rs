@@ -1,5 +1,23 @@
 pub use clap::Parser;
 use crate::types::PathData;
+use std::thread;
+
+fn available_parallelism() -> usize {
+    if let Ok(count) = thread::available_parallelism() {
+        return count.get()
+    }
+    1
+}
+
+#[cfg(not(feature = "threads"))]
+const HIDE_THREADS : bool = true;
+#[cfg(feature = "threads")]
+const HIDE_THREADS : bool = false;
+
+#[cfg(not(feature = "verbose"))]
+const HIDE_VERBOSE : bool = true;
+#[cfg(feature = "verbose")]
+const HIDE_VERBOSE : bool = false;
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -12,6 +30,10 @@ pub struct Args {
     #[arg(short, long, default_value_t = false)]
     pub disable_cache: bool,
     
+    /// Start with empty cache
+    #[arg(short, long, default_value_t = false)]
+    pub empty_cache: bool,
+    
     /// Where to store the cache
     #[arg(short, long, value_name = "<FILE>", default_value = ".fdedup_cache.bin")]
     pub cache_file: PathData,
@@ -20,7 +42,11 @@ pub struct Args {
     #[arg(short, long, default_value_t = false)]
     pub normalize: bool,
 
+    /// Number of computing threads to use
+    #[arg(short, long, default_value_t = available_parallelism(),hide=HIDE_THREADS)]
+    pub threads: usize,
+
     /// Verbose output (repeat for more verbosity)
-    #[arg(short='v', long="verbose", action = clap::ArgAction::Count, hide=!cfg!(verbose))]
+    #[arg(short='v', long="verbose", action = clap::ArgAction::Count, hide=HIDE_VERBOSE)]
     pub verbosity: u8,
 }
