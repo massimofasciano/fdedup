@@ -1,7 +1,8 @@
 [package]
 name = "fdedup"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
+authors = ["Massimo Fasciano"]
 
 [dependencies]
 sha2 = "0.10.6"
@@ -22,6 +23,6 @@ rpath = false
 strip = true
 
 [features]
-default = []
+default = ["very-verbose"]
 verbose = []
 very-verbose = ["verbose"]

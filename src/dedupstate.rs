@@ -2,7 +2,7 @@ use serde::{Serialize,Deserialize};
 use std::{collections::HashMap, time::SystemTime};
 
 use crate::types::{PathData,FileSize,HashData,Result};
-use crate::macros::{vprintln,vvprintln};
+use crate::verbose::{vprintln,vvprintln};
 use crate::hashedfile::HashedFile;
 use crate::duplicates::Duplicates;
 
@@ -31,14 +31,14 @@ impl DedupState {
             // file is already cached
             // check last modified date and reuse if same
                 if old.modified() == modified {
-                vprintln!("reusing {}",old.path.display());
+                vprintln!("reusing {}",old.path().display());
                 self.add_file_by_hash(&old.clone());
                 return;
             }
         }
         // hash new entry and add it
         if let Ok(hf) = HashedFile::new(path,modified) {
-            vprintln!("hashing {}",hf.path.display());
+            vprintln!("hashing {}",hf.path().display());
             self.add_file_by_hash(&hf);
             self.by_path.insert(hf.path().clone(), hf);
         }
@@ -72,20 +72,21 @@ impl DedupState {
     pub fn duplicates(& self) -> Vec<Duplicates> {
         self.duplicates_with_minsize(0)
     }
-    pub fn write_cache(& self, fname : &str) -> Result<()> {
+    pub fn write_cache<S>(&mut self, fname: S) -> Result<()> where S: Into<PathData> {
         let bytes = bincode::serialize(&self.by_path.values().collect::<Vec<_>>())?;
-        std::fs::write(fname, &bytes[..])?;
+        std::fs::write(fname.into(), &bytes[..])?;
         Ok(())
     }
-    pub fn read_cache(&mut self, fname : &str) -> Result<()> {
+    pub fn read_cache<S>(&mut self, fname: S) -> Result<()> where S: Into<PathData> {
+        let fname = fname.into();
         let bytes = std::fs::read(fname)?;
         let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
         for f in cache.iter() {
             if !self.by_path.contains_key(f.path()) {
-                vprintln!("adding to cache: {}",f.path.display());
+                vprintln!("adding to cache: {}",f.path().display());
                 self.by_path.insert(f.path().clone(), f.clone());
             } else {
-                vprintln!("aready cached: {}",f.path.display());
+                vprintln!("aready cached: {}",f.path().display());
             }
         }
         Ok(())
