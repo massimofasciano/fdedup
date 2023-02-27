@@ -12,6 +12,7 @@ use crate::duplicates::Duplicates;
 pub struct DedupState {
     by_hash : HashMap<HashData,Vec<PathData>>,
     by_path : HashMap<PathData,HashedFile>,
+    verbosity : u8,
 }
 
 impl DedupState {
@@ -26,19 +27,19 @@ impl DedupState {
         };
     }
     pub fn add_path(&mut self, path: PathData, modified: SystemTime) {
-        vvprintln!("add_path {:?}, {:?}", path, modified);
+        vvprintln!(self.verbosity,"add_path {:?}, {:?}", path, modified);
         if let Some(old) = self.by_path.get(&path) {
             // file is already cached
             // check last modified date and reuse if same
                 if old.modified() == modified {
-                vprintln!("reusing {}",old.path().display());
+                vprintln!(self.verbosity,"reusing {}",old.path().display());
                 self.add_file_by_hash(&old.clone());
                 return;
             }
         }
         // hash new entry and add it
         if let Ok(hf) = HashedFile::new(path,modified) {
-            vprintln!("hashing {}",hf.path().display());
+            vprintln!(self.verbosity,"hashing {}",hf.path().display());
             self.add_file_by_hash(&hf);
             self.by_path.insert(hf.path().clone(), hf);
         }
@@ -83,10 +84,10 @@ impl DedupState {
         let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
         for f in cache.iter() {
             if !self.by_path.contains_key(f.path()) {
-                vprintln!("adding to cache: {}",f.path().display());
+                vprintln!(self.verbosity,"adding to cache: {}",f.path().display());
                 self.by_path.insert(f.path().clone(), f.clone());
             } else {
-                vprintln!("aready cached: {}",f.path().display());
+                vprintln!(self.verbosity,"aready cached: {}",f.path().display());
             }
         }
         Ok(())
@@ -96,7 +97,7 @@ impl DedupState {
                 .filter_map(|e| e.ok())
                 .filter(|e| e.file_type().is_file());
         for entry in walk {
-            vvprintln!("{:#?}",entry);
+            vvprintln!(self.verbosity,"{:#?}",entry);
             use std::path::PathBuf;
             let mut path = entry.path().to_owned();
             if normalize_path && std::path::MAIN_SEPARATOR != '/' {
@@ -108,5 +109,8 @@ impl DedupState {
             self.add_path(path, entry.metadata()?.modified()?);
         }
         Ok(())
+    }
+    pub fn set_verbosity(&mut self, verbosity : u8) {
+        self.verbosity = verbosity;
     }
 }

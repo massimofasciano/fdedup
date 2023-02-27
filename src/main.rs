@@ -2,8 +2,8 @@ use fdedup::{Deduplicator,Result,args::{Args,Parser}};
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    Deduplicator::set_verbosity(args.verbose);
     let mut dedup = Deduplicator::default();
+    dedup.set_verbosity(args.verbose);
     for d in args.folders {
         dedup.add_dir(d);
     }

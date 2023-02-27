@@ -23,6 +23,5 @@ rpath = false
 strip = true
 
 [features]
-default = ["very-verbose"]
+default = []
 verbose = []
-very-verbose = ["verbose"]

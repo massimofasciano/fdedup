@@ -39,10 +39,8 @@ impl Deduplicator {
         }
         Ok(())
     }
-    pub fn set_verbosity(verbosity : u8) {
-        unsafe {
-            crate::verbose::VERBOSITY = verbosity;
-        }
+    pub fn set_verbosity(&mut self, verbosity : u8) {
+        self.dedup_state.set_verbosity(verbosity);
     }
 }
 

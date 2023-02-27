@@ -1,21 +1,21 @@
-pub (crate) static mut VERBOSITY : u8 = 0;
-
 #[cfg(feature = "verbose")]
 macro_rules! vprintln {
-    ($($x:tt)*) => { if unsafe { crate::verbose::VERBOSITY >= 1 } { println!($($x)*); } }
+    ($verbosity:expr,$($x:tt)*) => { if $verbosity >= 1 { println!($($x)*); } }
 }
+#[cfg(feature = "verbose")]
+macro_rules! vvprintln {
+    ($verbosity:expr,$($x:tt)*) => { if $verbosity >= 2 { println!($($x)*); } }
+//    ($($x:tt)*) => { if self.verbosity >= 2 { println!($($x)*); } }
+}
+
 #[cfg(not(feature = "verbose"))]
 macro_rules! vprintln {
-    ($($x:tt)*) => {  }
+    ($verbosity:expr,$($x:tt)*) => {  }
 }
-pub(crate) use vprintln; 
+#[cfg(not(feature = "verbose"))]
+macro_rules! vvprintln {
+    ($verbosity:expr,$($x:tt)*) => {  }
+}
 
-#[cfg(feature = "very-verbose")]
-macro_rules! vvprintln {
-    ($($x:tt)*) => { if unsafe { crate::verbose::VERBOSITY >= 2 } { println!($($x)*); } }
-}
-#[cfg(not(feature = "very-verbose"))]
-macro_rules! vvprintln {
-    ($($x:tt)*) => {  }
-}
+pub(crate) use vprintln; 
 pub(crate) use vvprintln; 
