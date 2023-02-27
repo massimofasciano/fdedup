@@ -10,7 +10,6 @@ Path normalization is enabled via -n (to the / Linux-style separator).
 
 ```
 $ fdedup --help
-
 Find groups of duplicate files by content
 
 Usage: fdedup [OPTIONS] [FOLDERS]...
@@ -20,11 +19,16 @@ Arguments:
 
 Options:
   -d, --disable-cache        Turn OFF caching of file hashes
+  -e, --empty-cache          Start with empty cache
   -c, --cache-file <<FILE>>  Where to store the cache [default: .fdedup_cache.bin]
   -n, --normalize            Normalize pathnames to Linux-style /
+  -t, --threads <THREADS>    Number of computing threads to use [default: 8]
   -v, --verbose...           Verbose output (repeat for more verbosity)
   -h, --help                 Print help
   -V, --version              Print version
+
+$ fdedup -V
+fdedup 0.2.0
 
 $ fdedup -n 
 
@@ -47,11 +51,13 @@ fn main() -> Result<()> {
     let mut dedup = Deduplicator::default();
     #[cfg(feature = "verbose")]
     dedup.set_verbosity(args.verbosity);
+    #[cfg(feature = "threads")]
+    dedup.set_threads(args.threads);
     for d in args.folders {
         dedup.add_dir(d);
     }
     dedup.normalize_path(args.normalize);
-    if !args.disable_cache {
+    if !args.disable_cache && !args.empty_cache {
         dedup.read_cache(&args.cache_file);
     }
     dedup.run()?;
