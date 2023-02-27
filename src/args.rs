@@ -2,8 +2,7 @@ pub use clap::Parser;
 use crate::types::PathData;
 
 #[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-/// Find groups of duplicate files by content
+#[command(version, about)]
 pub struct Args {
     /// Folders to scan
     #[arg(default_value = ".")]
