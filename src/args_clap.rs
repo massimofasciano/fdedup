@@ -1,6 +1,6 @@
-pub use clap::Parser;
 use crate::types::PathData;
 use std::thread;
+use clap::Parser;
 
 fn available_parallelism() -> usize {
     if let Ok(count) = thread::available_parallelism() {
@@ -49,4 +49,10 @@ pub struct Args {
     /// Verbose output (repeat for more verbosity)
     #[arg(short='v', long="verbose", action = clap::ArgAction::Count, hide=HIDE_VERBOSE)]
     pub verbosity: u8,
+}
+
+impl Args {
+    pub fn new() -> Self {
+        Self::parse()
+    }
 }

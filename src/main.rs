@@ -1,7 +1,7 @@
-use fdedup::{Deduplicator,Result,args::{Args,Parser}};
+use fdedup::{Deduplicator,Result,Args};
 
 fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = Args::new();
     let mut dedup = Deduplicator::default();
     #[cfg(feature = "verbose")]
     dedup.set_verbosity(args.verbosity);

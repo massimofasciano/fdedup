@@ -1,8 +1,5 @@
 use serde::{Serialize,Deserialize};
-use std::cmp::max;
 use std::{collections::HashMap, time::SystemTime};
-use threadpool::ThreadPool;
-use std::sync::mpsc::channel;
 
 use crate::types::{PathData,FileSize,HashData,Result};
 use crate::verbose::{vprintln};
@@ -108,7 +105,11 @@ impl DedupState {
         }
         Ok(())
     }
+    #[cfg(feature = "threadpool")]
     pub fn index_dir_multi_threaded<S>(&mut self, dir : S) -> Result<()> where S : Into<PathData> {
+        use threadpool::ThreadPool;
+        use std::sync::mpsc::channel;
+        use std::cmp::max;
         let (tx, rx) = channel();
         let pool = ThreadPool::new(max(self.threads as usize,1));
         let walk = walkdir::WalkDir::new(dir.into()).into_iter()
