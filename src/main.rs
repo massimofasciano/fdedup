@@ -10,13 +10,16 @@ fn main() -> Result<()> {
     for d in args.folders {
         dedup.add_dir(d);
     }
-    dedup.normalize_path(args.normalize);
+    dedup.set_normalize_path(args.normalize);
     if !args.disable_cache && !args.empty_cache {
         dedup.read_cache(&args.cache_file);
     }
-    dedup.run()?;
+    let duplicates = dedup.run()?;
     if !args.disable_cache {
         dedup.write_cache(&args.cache_file)?;
+    }
+    for dup in duplicates {
+        println!("{}",dup);
     }
     Ok(())
 }
