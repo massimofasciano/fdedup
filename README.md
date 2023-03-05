@@ -22,7 +22,7 @@ Options:
   -e, --empty-cache          Start with empty cache
   -c, --cache-file <<FILE>>  Where to store the cache [default: .fdedup_cache.bin]
   -n, --normalize            Normalize pathnames to Linux-style /
-  -t, --threads <THREADS>    Number of computing threads to use [default: 8]
+  -t, --threads <THREADS>    Number of computing threads to use  (defaults to total cores)
   -v, --verbose...           Verbose output (repeat for more verbosity)
   -h, --help                 Print help
   -V, --version              Print version
@@ -44,13 +44,13 @@ $ fdedup -n
 Can also be used as a library:
 
 ```rust
-use fdedup::{Deduplicator,Result,Args};
+use fdedup::{Deduplicator,Result,Args,set_verbosity};
 
 fn main() -> Result<()> {
     let args = Args::new();
-    let mut dedup = Deduplicator::default();
     #[cfg(feature = "verbose")]
-    dedup.set_verbosity(args.verbosity);
+    set_verbosity(args.verbosity)?;
+    let mut dedup = Deduplicator::default();
     #[cfg(feature = "threads")]
     dedup.set_threads(args.threads);
     for d in args.folders {

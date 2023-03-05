@@ -7,8 +7,7 @@ pub struct Deduplicator {
     dirs : Vec<PathData>,
     dedup_state : DedupState,
     normalize_path : bool,
-    verbosity : u8,
-    threads : usize,
+    threads : Option<usize>,
 }
 
 impl Deduplicator {
@@ -18,7 +17,10 @@ impl Deduplicator {
             ..Default::default()
         }
     }
-    pub fn set_threads(&mut self, threads : usize) {
+    pub fn set_threads(&mut self, threads : Option<usize>) {
+        if let Some(0) = threads {
+            return;
+        }
         self.threads = threads;
     }
     pub fn add_dir<S>(&mut self, dir: S) where S : Into<PathData> {
@@ -26,9 +28,6 @@ impl Deduplicator {
     }
     pub fn set_normalize_path(&mut self, normalize : bool) {
         self.normalize_path = normalize;
-    }
-    pub fn set_verbosity(&mut self, verbosity : u8) {
-        self.verbosity = verbosity;
     }
     pub fn read_cache<S>(&mut self, fname: S) where S: Into<PathData> {
         let fname = fname.into();
@@ -42,6 +41,11 @@ impl Deduplicator {
     }
     #[cfg(all(feature = "rayon", feature = "threads"))]
     pub fn run(&self) -> Result<Vec<Duplicates>> {
+        if let Some(threads) = self.threads {
+            if threads > 0 {
+                std::env::set_var("RAYON_NUM_THREADS", format!("{}",threads));
+            }
+        }
         rayon::scope(|s| {
             for dir in &self.dirs {
                 let walk = walkdir::WalkDir::new(dir).into_iter()
@@ -52,7 +56,7 @@ impl Deduplicator {
                     if self.normalize_path {
                         apply_path_normalization(&mut path);
                     }
-                    //let modified = entry.metadata()?.modified()?; //deal with these 2 possible errors ?
+                    // let modified = entry.metadata()?.modified()?; //deal with these 2 possible errors ?
                     let modified = entry.metadata().unwrap().modified().unwrap();
                     s.spawn(move |_| {
                         if !self.dedup_state.reuse_if_cached(&path, &modified) {
@@ -90,11 +94,15 @@ impl Deduplicator {
     }
     #[cfg(all(feature = "threadpool", feature = "threads"))]
     pub fn run(&mut self) -> Result<Vec<Duplicates>> {
-        use threadpool::ThreadPool;
         use std::sync::mpsc::channel;
-        use std::cmp::max;
         let (tx, rx) = channel();
-        let pool = ThreadPool::new(max(self.threads as usize,1));
+        let mut pool_threads = available_parallelism();
+        if let Some(threads) = self.threads {
+            if threads > 0 {
+                pool_threads = threads;
+            }
+        }
+        let pool = threadpool::ThreadPool::new(pool_threads);
         for dir in &self.dirs {
             let walk = walkdir::WalkDir::new(dir).into_iter()
                     .filter_map(|e| e.ok())
@@ -133,8 +141,7 @@ impl Default for Deduplicator {
             dirs : Vec::<PathData>::default(),
             dedup_state : DedupState::new(),
             normalize_path : false,
-            verbosity : 0,
-            threads : 1,
+            threads : None,
         }
     }
 }
@@ -146,5 +153,14 @@ fn apply_path_normalization(path: &mut PathData) {
             *path = PathData::from(s.replace(std::path::MAIN_SEPARATOR, "/"));
         }
     }
+}
+
+#[cfg(feature = "threadpool")]
+fn available_parallelism() -> usize {
+    use std::thread;
+    if let Ok(count) = thread::available_parallelism() {
+        return count.get()
+    }
+    1
 }
 

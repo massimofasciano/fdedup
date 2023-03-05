@@ -11,10 +11,11 @@ walkdir = "2"
 hex = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 bincode = "1.3.3"
-clap = { version = "4.1.6", features = ["derive"], optional = true}
+clap = { version = "4.1.8", features = ["derive"], optional = true}
 threadpool = { version = "1.8.1", optional = true }
 rayon = { version = "1.6.1", optional = true }
-dashmap = { version = "5.4.0", optional = true }
+once_cell = "1.17.1"
+getopts = { version = "0.2", optional = true }
 
 [profile.release]
 codegen-units = 1
@@ -29,8 +30,15 @@ strip = true
 [features]
 default = ["native"]
 #default = ["wasi"]
-native = ["clap", "threads","verbose"]
-wasi = ["verbose"]
+native = ["clap", "rayon", "verbose"]
+#native = ["clap", "threadpool", "verbose"]
+#native = ["clap", "verbose"]
+wasi = ["verbose", "getopts"]
+#wasi = ["verbose", "minimal_args"]
+threads = []
 verbose = []
-#threads = ["threadpool"]
-threads = ["rayon"]
+clap = ["dep:clap"]
+threadpool = ["dep:threadpool", "threads"]
+rayon = ["dep:rayon", "threads"]
+getopts = ["dep:getopts"]
+minimal_args = []

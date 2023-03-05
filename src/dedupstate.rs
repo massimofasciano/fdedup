@@ -1,9 +1,9 @@
-use std::cell::RefCell;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
 use std::time::SystemTime;
 use std::collections::HashMap;
-//use std::collections::hash_map;
+#[cfg(not(feature = "rayon"))]
+use std::cell::RefCell;
+#[cfg(feature = "rayon")]
+use std::sync::Mutex;
 
 use crate::types::{PathData,FileSize,HashData,Result};
 use crate::verbose::{vprintln};
@@ -20,7 +20,6 @@ pub struct DedupState {
     by_hash : Mutex<HashMap<HashData,Vec<PathData>>>,
     #[cfg(feature = "rayon")]
     by_path : Mutex<HashMap<PathData,HashedFile>>,
-    verbosity : u8,
 }
 
 #[cfg(feature = "rayon")]
@@ -41,6 +40,7 @@ impl DedupState {
         Self::default()
     }
     pub (crate) fn add_hashed_file(&self, hf: HashedFile) {
+        vprintln!(2,"adding hashed file: {}",hf.path().display());
         let mut by_hash = locked!(self.by_hash); 
         if let Some(v) = by_hash.get_mut(hf.hash()) {
             v.push(hf.path().clone())
@@ -54,6 +54,7 @@ impl DedupState {
         if let Some(old) = by_path.get(path) {
             if old.modified() == *modified {
                 let hf = old.clone();
+                vprintln!(2,"reusing from cache: {}",hf.path().display());
                 let mut by_hash = locked!(self.by_hash); 
                 if let Some(v) = by_hash.get_mut(hf.hash()) {
                     v.push(hf.path().clone())
@@ -106,10 +107,10 @@ impl DedupState {
         let cache : Vec<HashedFile> = bincode::deserialize(&bytes[..])?;
         for hf in cache.iter() {
             if !locked!(self.by_path).contains_key(hf.path()) {
-                vprintln!(1,self.verbosity,"adding to cache: {}",hf.path().display());
+                vprintln!(1,"adding to cache: {}",hf.path().display());
                 locked!(self.by_path).insert(hf.path().clone(), hf.clone());
             } else {
-                vprintln!(1,self.verbosity,"aready cached: {}",hf.path().display());
+                vprintln!(1,"aready cached: {}",hf.path().display());
             }
         }
         Ok(())

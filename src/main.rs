@@ -1,10 +1,10 @@
-use fdedup::{Deduplicator,Result,Args};
+use fdedup::{Deduplicator,Result,Args,set_verbosity};
 
 fn main() -> Result<()> {
     let args = Args::new();
-    let mut dedup = Deduplicator::default();
     #[cfg(feature = "verbose")]
-    dedup.set_verbosity(args.verbosity);
+    set_verbosity(args.verbosity)?;
+    let mut dedup = Deduplicator::default();
     #[cfg(feature = "threads")]
     dedup.set_threads(args.threads);
     for d in args.folders {

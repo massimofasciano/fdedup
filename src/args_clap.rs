@@ -1,13 +1,5 @@
-use crate::types::PathData;
-use std::thread;
+use crate::{types::PathData, DEFAULT_CACHE_FILE};
 use clap::Parser;
-
-fn available_parallelism() -> usize {
-    if let Ok(count) = thread::available_parallelism() {
-        return count.get()
-    }
-    1
-}
 
 #[cfg(not(feature = "threads"))]
 const HIDE_THREADS : bool = true;
@@ -35,16 +27,16 @@ pub struct Args {
     pub empty_cache: bool,
     
     /// Where to store the cache
-    #[arg(short, long, value_name = "<FILE>", default_value = ".fdedup_cache.bin", conflicts_with="disable_cache")]
+    #[arg(short, long, value_name = "<FILE>", default_value = DEFAULT_CACHE_FILE, conflicts_with="disable_cache")]
     pub cache_file: PathData,
 
     /// Normalize pathnames to Linux-style /
     #[arg(short, long, default_value_t = false)]
     pub normalize: bool,
 
-    /// Number of computing threads to use
-    #[arg(short, long, default_value_t = available_parallelism(),hide=HIDE_THREADS)]
-    pub threads: usize,
+    /// Number of computing threads to use (defaults to total cores)
+    #[arg(short, long, hide=HIDE_THREADS)]
+    pub threads: Option<usize>,
 
     /// Verbose output (repeat for more verbosity)
     #[arg(short='v', long="verbose", action = clap::ArgAction::Count, hide=HIDE_VERBOSE)]

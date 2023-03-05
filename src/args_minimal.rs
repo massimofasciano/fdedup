@@ -1,4 +1,4 @@
-use crate::types::PathData;
+use crate::{types::PathData, DEFAULT_CACHE_FILE};
 use std::env;
 
 #[derive(Debug)]
@@ -8,7 +8,7 @@ pub struct Args {
     pub empty_cache: bool,
     pub cache_file: PathData,
     pub normalize: bool,
-    pub threads: usize,
+    pub threads: Option<usize>,
     pub verbosity: u8,
 }
 
@@ -24,6 +24,7 @@ impl Args {
                 "-vv" => { verbosity += 1; None }
                 "-vvv" =>  { verbosity += 3; None }
                 "-vvvv" =>  { verbosity += 4; None }
+                "-vvvvv" =>  { verbosity += 5; None }
                 "-e" | "--empty-cache" =>  { empty_cache = true; None }
                 "-d" | "--disable-cache" =>  { disable_cache = true; None }
                 "-n" | "--normalize" =>  { normalize = true; None }
@@ -37,9 +38,9 @@ impl Args {
             folders,
             disable_cache,
             empty_cache,
-            cache_file : PathData::from(".fdedup_cache.bin"),
+            cache_file : PathData::from(DEFAULT_CACHE_FILE),
             normalize,
-            threads : 1,
+            threads : Some(1),
             verbosity,
         }
     }
