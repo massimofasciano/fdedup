@@ -49,23 +49,27 @@ impl DedupState {
         };
         locked!(self.by_path).insert(hf.path().clone(), hf);
     }
-    pub (crate) fn reuse_if_cached(&self, path : &PathData, modified : &SystemTime) -> bool {
-        let by_path = locked!(self.by_path);
-        if let Some(old) = by_path.get(path) {
-            if old.modified() == *modified {
-                let hf = old.clone();
-                vprintln!(2,"reusing from cache: {}",hf.path().display());
-                let mut by_hash = locked!(self.by_hash); 
-                if let Some(v) = by_hash.get_mut(hf.hash()) {
-                    v.push(hf.path().clone())
-                } else {
-                    by_hash.insert(hf.hash().clone(), vec!(hf.path().clone()));
-                };
-                return true;
+    pub (crate) fn reuse_if_cached(&self, path : &PathData, modified : &Option<SystemTime>) -> bool {
+        if let Some(modified) = modified {
+            let by_path = locked!(self.by_path);
+            if let Some(old) = by_path.get(path) {
+                if let Some(oldmod) = old.modified() {
+                    if oldmod == *modified {
+                        let hf = old.clone();
+                        vprintln!(2,"reusing from cache: {}",hf.path().display());
+                        let mut by_hash = locked!(self.by_hash); 
+                        if let Some(v) = by_hash.get_mut(hf.hash()) {
+                            v.push(hf.path().clone())
+                        } else {
+                            by_hash.insert(hf.hash().clone(), vec!(hf.path().clone()));
+                        };
+                        return true;
+                    }
+                }
             }
         }
         false
-        }
+    }
     pub (crate) fn duplicates_with_minsize(& self, minsize : FileSize) -> Vec<Duplicates> {
         let mut result = vec!();
         let by_hash = locked!(self.by_hash);

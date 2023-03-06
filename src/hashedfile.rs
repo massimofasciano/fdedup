@@ -8,12 +8,12 @@ use crate::types::{PathData,FileSize,HashData,Result};
 pub struct HashedFile {
     path : PathData,
     hash : HashData,
-    modified : SystemTime,
+    modified : Option<SystemTime>,
     size : FileSize,
 }
 
 impl HashedFile {
-    pub fn new(path : PathData, modified : SystemTime) -> Result<Self> {
+    pub fn new(path : PathData, modified : Option<SystemTime>) -> Result<Self> {
         use sha2::{Sha512, Digest};
         use std::{io, fs};
 
@@ -28,7 +28,7 @@ impl HashedFile {
     pub fn size(&self) -> FileSize {
         self.size
     }
-    pub fn modified(&self) -> SystemTime {
+    pub fn modified(&self) -> Option<SystemTime> {
         self.modified
     }
     pub fn hash(&self) -> &HashData {

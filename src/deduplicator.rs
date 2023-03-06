@@ -56,8 +56,7 @@ impl Deduplicator {
                     if self.normalize_path {
                         apply_path_normalization(&mut path);
                     }
-                    // let modified = entry.metadata()?.modified()?; //deal with these 2 possible errors ?
-                    let modified = entry.metadata().unwrap().modified().unwrap();
+                    let modified = entry.metadata().ok().and_then(|meta|meta.modified().ok());
                     s.spawn(move |_| {
                         if !self.dedup_state.reuse_if_cached(&path, &modified) {
                             if let Ok(hf) = HashedFile::new(path,modified) {
@@ -82,7 +81,7 @@ impl Deduplicator {
                 if self.normalize_path {
                     apply_path_normalization(&mut path);
                 }
-                let modified = entry.metadata()?.modified()?;
+                let modified = entry.metadata().ok().and_then(|meta|meta.modified().ok());
                 if !state.reuse_if_cached(&path, &modified) {
                     if let Ok(hf) = HashedFile::new(path,modified) {
                         state.add_hashed_file(hf);
@@ -112,7 +111,7 @@ impl Deduplicator {
                 if self.normalize_path {
                     apply_path_normalization(&mut path);
                 }
-                let modified = entry.metadata()?.modified()?;
+                let modified = entry.metadata().ok().and_then(|meta|meta.modified().ok());
                 if !self.dedup_state.reuse_if_cached(&path, &modified) {
                     let txc = tx.clone();
                     pool.execute(move|| {
