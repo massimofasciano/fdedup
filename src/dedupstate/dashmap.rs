@@ -31,6 +31,10 @@ impl DedupState {
                 if let Some(oldmod) = old.modified() {
                     if oldmod == *modified {
                         let hf = old.clone();
+                        // when using threads it's important to drop old
+                        // after cloning to quickly release the
+                        // read lock on by_path
+                        drop(old);
                         vprintln!(2,"reusing from cache: {}",hf.path().display());
                         if let Some(mut v) = self.by_hash.get_mut(hf.hash()) {
                             v.push(hf.path().clone())
