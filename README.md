@@ -44,7 +44,7 @@ $ fdedup -n
 Can also be used as a library:
 
 ```rust
-use fdedup::{Deduplicator,Result,Args};
+use fdedup::{Deduplicator,Result,args::Args};
 #[cfg(feature = "verbose")]
 use fdedup::{set_verbosity};
 
