@@ -39,7 +39,7 @@ impl Deduplicator {
     pub fn write_cache<S>(&mut self, fname: S) -> Result<()> where S: Into<PathData> {
         self.dedup_state.write_cache(fname.into())
     }
-    #[cfg(all(feature = "rayon", feature = "threads"))]
+    #[cfg(all(any(feature = "mutex", feature = "dashmap"),feature = "threads"))]
     pub fn run(&self) -> Result<Vec<Duplicates>> {
         if let Some(threads) = self.threads {
             if threads > 0 {
@@ -69,7 +69,7 @@ impl Deduplicator {
         });
         Ok(self.dedup_state.duplicates())
     }
-    #[cfg(not(any(feature = "threadpool", feature = "rayon")))]
+    #[cfg(not(any(feature = "channel", feature = "mutex", feature = "dashmap")))]
     pub fn run(&mut self) -> Result<Vec<Duplicates>> {
         let state = &mut self.dedup_state;
         for dir in &self.dirs {
@@ -91,7 +91,7 @@ impl Deduplicator {
         }
         Ok(self.dedup_state.duplicates())
     }
-    #[cfg(all(feature = "threadpool", feature = "threads"))]
+    #[cfg(all(feature = "channel", feature = "threads"))]
     pub fn run(&mut self) -> Result<Vec<Duplicates>> {
         use std::sync::mpsc::channel;
         let (tx, rx) = channel();
@@ -154,7 +154,7 @@ fn apply_path_normalization(path: &mut PathData) {
     }
 }
 
-#[cfg(feature = "threadpool")]
+#[cfg(feature = "channel")]
 fn available_parallelism() -> usize {
     use std::thread;
     if let Ok(count) = thread::available_parallelism() {
