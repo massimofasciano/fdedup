@@ -1,4 +1,4 @@
-use fdedup::{Deduplicator,Result,Args};
+use fdedup::{Deduplicator,Result,args::Args};
 #[cfg(feature = "verbose")]
 use fdedup::{set_verbosity};
 
