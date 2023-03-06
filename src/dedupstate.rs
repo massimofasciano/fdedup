@@ -41,12 +41,15 @@ impl DedupState {
     }
     pub (crate) fn add_hashed_file(&self, hf: HashedFile) {
         vprintln!(2,"adding hashed file: {}",hf.path().display());
-        let mut by_hash = locked!(self.by_hash); 
-        if let Some(v) = by_hash.get_mut(hf.hash()) {
-            v.push(hf.path().clone())
-        } else {
-            by_hash.insert(hf.hash().clone(), vec!(hf.path().clone()));
-        };
+        {   // operate on by_hash inside this scope so the lock gets
+            // released before operating on by_path (when using threads)
+            let mut by_hash = locked!(self.by_hash); 
+            if let Some(v) = by_hash.get_mut(hf.hash()) {
+                v.push(hf.path().clone())
+            } else {
+                by_hash.insert(hf.hash().clone(), vec!(hf.path().clone()));
+            };
+        }
         locked!(self.by_path).insert(hf.path().clone(), hf);
     }
     pub (crate) fn reuse_if_cached(&self, path : &PathData, modified : &Option<SystemTime>) -> bool {
@@ -56,6 +59,10 @@ impl DedupState {
                 if let Some(oldmod) = old.modified() {
                     if oldmod == *modified {
                         let hf = old.clone();
+                        // when using threads it's important to drop by_path
+                        // to release the lock on it after we cloned the ref
+                        // to old that was pointinh inside it
+                        drop(by_path);
                         vprintln!(2,"reusing from cache: {}",hf.path().display());
                         let mut by_hash = locked!(self.by_hash); 
                         if let Some(v) = by_hash.get_mut(hf.hash()) {
