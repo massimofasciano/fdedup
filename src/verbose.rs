@@ -6,6 +6,7 @@ pub(crate) static VERBOSITY: Lazy<Arc<Mutex<u8>>> = Lazy::new(|| {
     Arc::new(Mutex::new(0))
 });
 
+#[cfg(feature = "verbose")]
 pub (crate) fn check_verbosity(verbosity : u8) -> bool {
     if let Ok(global_verbosity) = VERBOSITY.lock() {
         verbosity <= *global_verbosity

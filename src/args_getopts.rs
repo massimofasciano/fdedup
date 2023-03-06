@@ -25,11 +25,13 @@ impl Args {
     
         let mut opts = getopts::Options::new();
         opts.optopt("c", "cache-file", format!("where to store the cache [default: {}]",DEFAULT_CACHE_FILE).as_str(), "FILE");
+        #[cfg(feature = "threads")]
         opts.optopt("t", "threads", "mumber of computing threads to use (defaults to total cores)", "NUM");
         opts.optflag("h", "help", "print this help menu");
         opts.optflag("d", "disable-cache", "disable the cache");
         opts.optflag("e", "empty-cache", "start with an empty cache");
         opts.optflag("n", "normalize", "normalize pathnames to Linux-style /");
+        #[cfg(feature = "verbose")]
         opts.optflagmulti("v", "verbose", "verbose output (repeat for more verbosity)");
         
         let matches = match opts.parse(&args[1..]) {
@@ -45,13 +47,14 @@ impl Args {
             exit(0);
         }
         let cache_file = PathData::from(matches.opt_str("c").unwrap_or(DEFAULT_CACHE_FILE.to_string()));
-        let mut threads : Option<usize> = None;
-        if let Some(threads_string) = matches.opt_str("t") {
-            if let Ok(t) = threads_string.parse::<usize>() {
-                threads = Some(t);
-            }
-        }
-        let verbosity : u8 = matches.opt_count("v") as u8;
+        #[cfg(not(feature = "threads"))]
+        let threads = None;
+        #[cfg(feature = "threads")]
+        let threads = matches.opt_str("t").and_then(|s|s.parse::<usize>().ok());
+        #[cfg(not(feature = "verbose"))]
+        let verbosity = 0;
+        #[cfg(feature = "verbose")]
+        let verbosity = matches.opt_count("v") as u8;
         let empty_cache = matches.opt_present("e");
         let disable_cache = matches.opt_present("d");
         let normalize = matches.opt_present("n");

@@ -69,7 +69,7 @@ impl Deduplicator {
         });
         Ok(self.dedup_state.duplicates())
     }
-    #[cfg(not(feature = "threads"))]
+    #[cfg(not(any(feature = "threadpool", feature = "rayon")))]
     pub fn run(&mut self) -> Result<Vec<Duplicates>> {
         let state = &mut self.dedup_state;
         for dir in &self.dirs {

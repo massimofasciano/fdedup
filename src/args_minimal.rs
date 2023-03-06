@@ -21,7 +21,7 @@ impl Args {
         let mut folders : Vec<PathData> = env::args().skip(1).filter_map(|arg| {
             match arg.as_str() {
                 "-v" | "--verbose" => { verbosity += 1; None }
-                "-vv" => { verbosity += 1; None }
+                "-vv" => { verbosity += 2; None }
                 "-vvv" =>  { verbosity += 3; None }
                 "-vvvv" =>  { verbosity += 4; None }
                 "-vvvvv" =>  { verbosity += 5; None }
