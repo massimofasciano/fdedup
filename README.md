@@ -56,6 +56,7 @@ At this moment, no code was written to act on the duplicates, except to display 
 - erase all but one of the files in each group (or move them to a trash location)
 - instead of erasing, hard-link to the first in the group
 - instead of erasing, soft-link to the first in the group
+
 This could be added to the duplicates module.
 
 The demo program can be used to find duplicate files in a series of folders (recursively). It prints them in groups with their size and hex digest (SHA-512).
