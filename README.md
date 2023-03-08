@@ -1,5 +1,5 @@
 # fdedup
-A recursive file contents deduplicator built in Rust
+A recursive file contents deduplicator built in Rust:
 
 - library crate with demo main program
 - Uses SHA-512 to detect duplicates based on file contents
@@ -14,17 +14,17 @@ In fact, a deduplicator is one of the projects I write to familiarize myself wit
 
 The code can be built for a multi-threaded environment where it takes advantage of parallel hashing of the files. Number of threads can be specified but defaults to the number of cores seen by the system. When file IO is the bottleneck, there is no huge advantage to threading unless dealing with a lot of very small files on a storage system that can handle many parallel requests. When most of the files are in the OS file cache, the speedup is huge.
 
-The code can also be built without threads for systems that don't support them (some embedded systems, wasi at the moment of writing version 0.3 of this crate). There is no real speed advantage to building without threads if they are supported, even if you only have 1 core.
+The code can also be built without threads for systems that don't support them (some embedded systems, wasm-wasi at the moment of writing version 0.3 of this crate). There is no real speed advantage to building without threads if they are supported, even if you only have 1 core.
 
 There are 3 versions of the dedupstate module based on mutex, dashmap and bare single threaded code. 
 
-The single threaded code doesn't use interior mutability (the borrow checker can works at compile time). The single threaded version of dedupstate is also used when compiling a version of the code with threads and channels. A threadpool is used to create the file digests and send them to the main thread via channels. In this version the dedupstate is used in a single thread.
+The single threaded code doesn't use interior mutability (compile time borrow checking). The single threaded version of dedupstate is also used when compiling a version of the code with threads and channels. A threadpool is used to create the file digests and send them to the main thread via channels. In this version the dedupstate is used in a single thread.
 
-The mutex version places each of the 2 hashes inside a Mutex. It's almost a copy of the single threaded code but with immutable references to self and interior mutability. A special locked! macro is used to grab a lock on each mutex. This is the result of a failed attempt to compile the same code base with and without interior mutability. A normal function could have been used instead. The mutex version can also be compiled with the Mutex replaced by RefCell using a feature. Only the locked! macro changes. There is no noticeable speed difference in single threaded use.
+The mutex version places each of the 2 hashes inside a Mutex. It's almost a copy of the single threaded code but with immutable references to self and interior mutability. A special locked! macro is used to grab a lock on each mutex. This is the result of a failed attempt to compile the same code base with and without interior mutability. A normal function could have been used instead. The mutex version can also be compiled with the Mutex replaced by RefCell using a compile-time Cargo feature. Only the locked! macro changes. There is no noticeable speed difference in single threaded use.
 
-The dashmap version replaces both HashMap with DashMap. Some code had to be rewritten slightly because of the differences between HashMap and DashMap. For this use case, the DashMap does not outperform the Mutex+HashMap. The bottlenecks are with the IO and the file digest hashing, which is not surprising.
+The dashmap version replaces both HashMaps with DashMaps. Some code had to be rewritten slightly because of the differences between HashMap and DashMap. For this use case, the DashMap does not outperform the Mutex+HashMap. The bottlenecks are with the IO and the file digest hashing, which is not surprising.
 
-So in summary, you have 4 setups:
+So in summary, there are 4 setups:
 - single threaded for all
 - single threaded state + threaded file digests via channels (slightly slower than fully threaded but safer)
 - multi-threaded state and digests using Mutex+HashMap
@@ -38,7 +38,7 @@ The example program makes use of command line arguments via 3 optional libraries
 - a clap version
 The clap version is compiled by default and should be used but it didn't compile under wasm-wasi when 0.3 was written so the getopts version was added for this case.
 
-This crate is fully functional when compiled for the wasm-wasi environment (WebAssembly System Interface). At the time when version 0.3 was written, clap and threads did not work so getopts and a single threaded algorithm had to be used. Wasi was tested using cargo wasi and wasmtime. It's important to use the "--dir" option to allow sandbox access to the folders that we are indexing and also the current directory for the cache file (if needed). Speed varies depending on the data and if is in the OS cache or not. When everything is OS cached and we are not IO limited, it is about 50% slower than native single threaded code for calculating file digests. When we are IO limited, I have seen it run 5-6x slower than native.
+This crate is fully functional when compiled for the wasm-wasi environment (WebAssembly System Interface). At the time when version 0.3 was written, clap and threads did not work so getopts and a single threaded algorithm had to be used. Wasi was tested using cargo wasi and wasmtime. It's important to use the "--dir" option to allow sandbox access to the folders that we are indexing and also the current directory for the cache file (if needed). Speed varies depending on the data and if it is in the OS cache or not. When everything is OS cached and we are not IO limited, it is about 50% slower than native single threaded code for calculating file digests. When we are IO limited, I have seen it run 5-6x slower than native.
 
 A few compile-time features are available:
 - default : native version by default
@@ -52,7 +52,7 @@ A few compile-time features are available:
 - dashmap : DashMap variant + rayon scope fully threaded
 - refcell : use with channel to build the mutex variant with Mutex replaced by RefCell (RefCell+HashMap)
 
-The demo program can be used to find duplicate files in a series of folders (recusrsively). It prints them in groups with their size and hex digest (SHA-512).
+The demo program can be used to find duplicate files in a series of folders (recursively). It prints them in groups with their size and hex digest (SHA-512).
 
 ```
 $ fdedup --help
@@ -87,7 +87,7 @@ $ fdedup -n
 ./target/debug/build/generic-array-1c07903af6f17199/build_script_build.pdb
 ```
 
-The demo program uses this fdedup library:
+The demo program uses this fdedup crate:
 
 ```rust
 use fdedup::{Deduplicator,Result,args::Args};
