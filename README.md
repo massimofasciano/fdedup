@@ -52,6 +52,12 @@ A few compile-time features are available:
 - dashmap : DashMap variant + rayon scope fully threaded
 - refcell : use with channel to build the mutex variant with Mutex replaced by RefCell (RefCell+HashMap)
 
+At this moment, no code was written to act on the duplicates, except to display them, so it's not a full deduplicator yet but rather a duplication detector. The next part is rather trivial and there are a few possibilities:
+- erase all but one of the files in each group (or move them to a trash location)
+- instead of erasing, hard-link to the first in the group
+- instead of erasing, soft-link to the first in the group
+This could be added to the duplicates module.
+
 The demo program can be used to find duplicate files in a series of folders (recursively). It prints them in groups with their size and hex digest (SHA-512).
 
 ```
