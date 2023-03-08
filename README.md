@@ -81,7 +81,7 @@ Options:
   -V, --version              Print version
 
 $ fdedup -V
-fdedup 0.2.0
+fdedup 0.3.0
 
 $ fdedup -n 
 
