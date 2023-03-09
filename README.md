@@ -40,6 +40,11 @@ The clap version is compiled by default and should be used but it didn't compile
 
 This crate is fully functional when compiled for the wasm-wasi environment (WebAssembly System Interface). At the time when version 0.3 was written, clap and threads did not work so getopts and a single threaded algorithm had to be used. Wasi was tested using cargo wasi and wasmtime. It's important to use the "--dir" option to allow sandbox access to the folders that we are indexing and also the current directory for the cache file (if needed). Speed varies depending on the data and if it is in the OS cache or not. When everything is OS cached and we are not IO limited, it is about 50% slower than native single threaded code for calculating file digests. When we are IO limited, I have seen it run 5-6x slower than native.
 
+Extra info about wasm-wasi:
+- with rust nightly, clap compiles and works for wasi (tested on 2023-02-28)
+- the features that use rayon (mutex and dashmap) work under wasi but I don't think they actually spawn any threads (it still works for my code because the main thread doesn't mind waiting)
+- the channel+threadpool config crashes at runtime because wasi doesn't yet support real threads (it's coming)
+
 A few compile-time features are available:
 - default : native version by default
 - native : by default selects ["clap", "mutex", "verbose"]. If mutex, channel or dashmap not selected, fully single threaded code is built.
