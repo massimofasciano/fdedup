@@ -84,7 +84,6 @@ impl DedupState {
         self.duplicates_with_minsize(0)
     }
     pub fn write_cache<S>(&mut self, fname: S) -> Result<()> where S: Into<PathData> {
-        // let bytes = bincode::serialize(&self.by_path.values().collect::<Vec<_>>())?;
         let bytes = bincode::serialize(&self.by_path.iter().map(|kv|kv.value().clone()).collect::<Vec<_>>())?;
         std::fs::write(fname.into(), &bytes[..])?;
         Ok(())
@@ -98,7 +97,7 @@ impl DedupState {
                 vprintln!(1,"adding to cache: {}",hf.path().display());
                 self.by_path.insert(hf.path().clone(), hf.clone());
             } else {
-                vprintln!(1,"aready cached: {}",hf.path().display());
+                vprintln!(1,"already cached: {}",hf.path().display());
             }
         }
         Ok(())

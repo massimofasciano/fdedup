@@ -61,7 +61,7 @@ impl DedupState {
                         let hf = old.clone();
                         // when using threads it's important to drop by_path
                         // to release the lock on it after we cloned the ref
-                        // to old that was pointinh inside it
+                        // to old that was pointing inside it
                         drop(by_path);
                         vprintln!(2,"reusing from cache: {}",hf.path().display());
                         let mut by_hash = locked!(self.by_hash); 
@@ -121,7 +121,7 @@ impl DedupState {
                 vprintln!(1,"adding to cache: {}",hf.path().display());
                 locked!(self.by_path).insert(hf.path().clone(), hf.clone());
             } else {
-                vprintln!(1,"aready cached: {}",hf.path().display());
+                vprintln!(1,"already cached: {}",hf.path().display());
             }
         }
         Ok(())

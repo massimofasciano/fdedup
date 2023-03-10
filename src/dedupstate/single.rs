@@ -86,7 +86,7 @@ impl DedupState {
                 vprintln!(1,"adding to cache: {}",hf.path().display());
                 self.by_path.insert(hf.path().clone(), hf.clone());
             } else {
-                vprintln!(1,"aready cached: {}",hf.path().display());
+                vprintln!(1,"already cached: {}",hf.path().display());
             }
         }
         Ok(())

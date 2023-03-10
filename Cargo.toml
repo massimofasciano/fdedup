@@ -1,6 +1,6 @@
 [package]
 name = "fdedup"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["Massimo Fasciano <massimo@mafalitic.com>"]
 description = "Find groups of duplicate files by content"
@@ -36,6 +36,7 @@ native = ["clap", "mutex", "verbose"]
 #native = ["clap", "dashmap", "verbose"]
 #native = ["clap", "verbose"]
 wasi = ["verbose", "getopts"]
+#wasi = ["verbose", "clap"]
 #wasi = ["verbose"]
 threads = []
 verbose = []
