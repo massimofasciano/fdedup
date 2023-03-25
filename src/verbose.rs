@@ -20,8 +20,8 @@ pub fn set_verbosity(verbosity : u8) -> Result<()> {
         Ok(mut global_verbosity) => {
             *global_verbosity = verbosity;
             Ok(())
-        }
-        Err(e) => Err(Box::new(e))
+        },
+        Err(e) => Err(anyhow::format_err!("{}",e)),
     }
 }
 
