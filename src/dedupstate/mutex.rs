@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use std::sync::Mutex;
 
 use crate::types::{PathData,FileSize,HashData,Result};
-use crate::verbose::{vprintln};
+use crate::verbose::vprintln;
 use crate::hashedfile::HashedFile;
 use crate::duplicates::Duplicates;
 
@@ -101,7 +101,8 @@ impl DedupState {
                 }
             }
         }
-        result.sort_by(|a, b| a.size().cmp(&b.size()));
+        // result.sort_by(|a, b| a.size().cmp(&b.size()));
+        result.sort_by_key(|a| a.size());
         result
     }
     pub fn duplicates(& self) -> Vec<Duplicates> {

@@ -48,3 +48,9 @@ impl Args {
         Self::parse()
     }
 }
+
+impl Default for Args {
+    fn default() -> Self {
+        Self::parse()    
+    }
+}
