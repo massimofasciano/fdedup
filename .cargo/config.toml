@@ -1,2 +1,0 @@
-# [target.wasm32-wasi-preview1-threads]
-# wasi-root = "/opt/wasi-sdk-20.0/share/wasi-sysroot"
